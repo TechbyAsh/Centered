@@ -1,0 +1,10 @@
+{
+    "plugins": [
+      "react-native-globals"
+    ],
+  
+    "env": {
+      "react-native-globals/all": true
+    }
+  }
+  
