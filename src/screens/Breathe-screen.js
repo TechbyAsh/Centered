@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from "react";
+import React, {useState, useEffect, useRef} from "react";
 import  styled  from 'styled-components/native';
 import { SafeArea} from "../utils/safe-areacomponent";
 import { Ionicons } from "@expo/vector-icons";
@@ -51,15 +51,15 @@ const StartText = styled.Text`
 `;
 
 export const BreatheScreen = ({navigation}) => {
-  const scaleAnim = useState(new Animated.Value(1))[0];
-  const glowAnim = useState(new Animated.Value(0.5))[0];
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const glowAnim = useRef(new Animated.Value(0.5)).current;
 
   useEffect(() => {
     const startBreathing = () => {
       Animated.loop(
         Animated.sequence([
           Animated.timing(scaleAnim, {
-            toValue: 1.3,
+            toValue: 1.5,
             duration: 4000,
             easing: Easing.inOut(Easing.ease),
             useNativeDriver: true,
@@ -72,7 +72,8 @@ export const BreatheScreen = ({navigation}) => {
           }),
         ])
       ).start();
-    };
+    }; 
+  
 
     const startGlow = () => {
       Animated.loop(
@@ -95,10 +96,9 @@ export const BreatheScreen = ({navigation}) => {
 
     startBreathing();
     startGlow();
-  }, [scaleAnim, glowAnim]);
+  }, []);
 
     return (
-        <SafeArea>
             <Container>
       {/* Close Button */}
       <CloseButton onPress={() => navigation.goBack()}>
@@ -111,14 +111,11 @@ export const BreatheScreen = ({navigation}) => {
       </InstructionText>
 
       {/* Animated Start Button */}
-      <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-        <AnimatedStartButton style={{ opacity: glowAnim }} onPress={() => console.log("Start Breathing")}>
+        <AnimatedStartButton style={{ transform: [{ scale: scaleAnim }], opacity: glowAnim }} onPress={() => console.log("Start Breathing")}>
           <LinearGradient colors={["#00A896", "#028090"]} style={{ borderRadius: 50, width: "100%", height: "100%", justifyContent: "center", alignItems: "center" }}>
             <StartText>Start</StartText>
           </LinearGradient>
         </AnimatedStartButton>
-      </Animated.View>
-    </Container>
-        </SafeArea>
+    </Container> 
     )
 }
