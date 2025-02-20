@@ -14,6 +14,7 @@ import { WelcomeScreen } from './src/screens/welcome';
 import { RelaxScreen } from './src/screens/Relax-screen';
 import { SleepScreen } from "./src/screens/Sleep-screen"
 import { BreatheScreen } from './src/screens/Breathe-screen';
+import { OnboardingScreen } from './src/screens/onboarding/onboarding-screen';
 
 const HomeStack = createStackNavigator();
 
@@ -37,6 +38,7 @@ export default function App() {
     <ThemeProvider theme={theme}>
       <NavigationContainer>
       <HomeStack.Navigator  screenOptions={{headerShown: false}}>
+   <HomeStack.Screen name="Onboarding" component={OnboardingScreen}/>
     <HomeStack.Screen name="Welcome" component={WelcomeScreen}/>
     <HomeStack.Screen name="Breathe" component={BreatheScreen}/>
     <HomeStack.Screen name="Relax" component={RelaxScreen}/>
