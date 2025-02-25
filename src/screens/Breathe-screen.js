@@ -10,9 +10,9 @@ import {Text, View, Animated, TouchableOpacity, Easing} from "react-native"
 const Container = styled.View`
   flex: 1;
   background-color: #d8fcf8;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  padding: 80px 20px;
+  padding: 20px;
 `;
 
 const CloseButton = styled.TouchableOpacity`
@@ -23,6 +23,9 @@ const CloseButton = styled.TouchableOpacity`
 `;
 
 const InstructionText = styled.Text`
+  position: absolute;
+  top: 75px;
+  left: 20px;
   font-size: 26px;
   color: #00a896;
   text-align: left;
@@ -31,8 +34,6 @@ const InstructionText = styled.Text`
 `;
 
 const AnimatedStartButton = styled(Animated.createAnimatedComponent(TouchableOpacity))`
-  position: absolute;
-  bottom: 50px;
   width: 100px;
   height: 100px;
   border-radius: 50px;
@@ -51,52 +52,65 @@ const StartText = styled.Text`
 `;
 
 export const BreatheScreen = ({navigation}) => {
+  const [isActive , setIsActive] = useState(false)
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const glowAnim = useRef(new Animated.Value(0.5)).current;
+  const scaleLoopRef = useRef(null);
+  const glowLoopRef = useRef(null);
 
-  useEffect(() => {
-    const startBreathing = () => {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(scaleAnim, {
-            toValue: 1.5,
-            duration: 4000,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(scaleAnim, {
-            toValue: 1,
-            duration: 4000,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
-    }; 
+  const startAnimations = () => {
+    scaleLoopRef.current = Animated.loop(
+      Animated.sequence([
+        Animated.timing(scaleAnim, {
+          toValue: 3.5,
+          duration: 4000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 4000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    glowLoopRef.current = Animated.loop(
+      Animated.sequence([
+        Animated.timing(glowAnim, {
+          toValue: 1,
+          duration: 5000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(glowAnim, {
+          toValue: 0.5,
+          duration: 5000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    scaleLoopRef.current.start();
+    glowLoopRef.current.start();
+  }
   
 
-    const startGlow = () => {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(glowAnim, {
-            toValue: 1,
-            duration: 2000,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(glowAnim, {
-            toValue: 0.5,
-            duration: 2000,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
-    };
+  const stopAnimations = () => {
+    scaleLoopRef.current?.stop();
+    glowLoopRef.current?.stop();
+  };
 
-    startBreathing();
-    startGlow();
-  }, []);
+  const handlePress = () => {
+    if (isActive) {
+      stopAnimations();
+    } else {
+      startAnimations();
+    }
+    setIsActive(!isActive);
+  };
 
     return (
             <Container>
@@ -110,12 +124,24 @@ export const BreatheScreen = ({navigation}) => {
         Be still.{"\n"}Bring your attention{"\n"}to your breath.
       </InstructionText>
 
-      {/* Animated Start Button */}
-        <AnimatedStartButton style={{ transform: [{ scale: scaleAnim }], opacity: glowAnim }} onPress={() => console.log("Start Breathing")}>
-          <LinearGradient colors={["#00A896", "#028090"]} style={{ borderRadius: 50, width: "100%", height: "100%", justifyContent: "center", alignItems: "center" }}>
-            <StartText>Start</StartText>
-          </LinearGradient>
-        </AnimatedStartButton>
+      {/* Animated Start/Stop Button */}
+      <AnimatedStartButton
+        style={{ transform: [{ scale: scaleAnim }], opacity: glowAnim }}
+        onPress={handlePress}
+      >
+        <LinearGradient
+          colors={["#00A896", "#028090"]}
+          style={{
+            borderRadius: 50,
+            width: "100%",
+            height: "100%",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <StartText>{isActive ? "Stop" : "Start"}</StartText>
+        </LinearGradient>
+      </AnimatedStartButton>
     </Container> 
     )
 }
