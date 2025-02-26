@@ -8,6 +8,7 @@ import { Poppins_400Regular } from '@expo-google-fonts/poppins';
 
 import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer } from '@react-navigation/native';
+import { TransitionPresets } from '@react-navigation/stack';
 
 
 import { WelcomeScreen } from './src/screens/welcome';
@@ -37,7 +38,11 @@ export default function App() {
     <>
     <ThemeProvider theme={theme}>
       <NavigationContainer>
-      <HomeStack.Navigator  screenOptions={{headerShown: false}}>
+      <HomeStack.Navigator  
+      screenOptions={{
+              headerShown: false,
+              ...TransitionPresets.ModalSlideFromBottomIOS, 
+              gestureEnabled: true, }}>
    <HomeStack.Screen name="Onboarding" component={OnboardingScreen}/>
     <HomeStack.Screen name="Welcome" component={WelcomeScreen}/>
     <HomeStack.Screen name="Breathe" component={BreatheScreen}/>
