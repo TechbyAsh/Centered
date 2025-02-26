@@ -51,18 +51,43 @@ const StartText = styled.Text`
   font-weight: 600;
 `;
 
+const TimerButtonsContainer = styled.View`
+  position: absolute;
+  bottom: 60px;
+  justify-content: center;
+  flex-direction: row;
+  width: 100%;
+`;
+
+const TimerButton = styled.TouchableOpacity`
+  background-color: ${({ selected }) => (selected ? "#00A896" : "#FFFFFF")};
+  padding: 10px 20px;
+  margin: 0 10px;
+  border-radius: 20px;
+  border: 2px solid #00A896;
+`;
+
+const TimerText = styled.Text`
+  font-size: 16px;
+  color: ${({ selected }) => (selected ? "white" : "#00A896")};
+  font-weight: 600;
+`;
+
 export const BreatheScreen = ({navigation}) => {
   const [isActive , setIsActive] = useState(false)
+  const [selectedTime, setSelectedTime] = useState(1); // Default: 1 minute
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const glowAnim = useRef(new Animated.Value(0.5)).current;
   const scaleLoopRef = useRef(null);
   const glowLoopRef = useRef(null);
 
+  const getDuration = () => selectedTime * 60000; // Convert minutes to milliseconds
+
   const startAnimations = () => {
     scaleLoopRef.current = Animated.loop(
       Animated.sequence([
         Animated.timing(scaleAnim, {
-          toValue: 3.5,
+          toValue: 3.0,
           duration: 4000,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
@@ -92,10 +117,17 @@ export const BreatheScreen = ({navigation}) => {
         }),
       ])
     );
-
     scaleLoopRef.current.start();
     glowLoopRef.current.start();
-  }
+
+    // Stop after selected duration
+    setTimeout(() => {
+      stopAnimations();
+      setIsActive(false);
+    }, getDuration());
+  };
+
+  
   
 
   const stopAnimations = () => {
@@ -142,6 +174,19 @@ export const BreatheScreen = ({navigation}) => {
           <StartText>{isActive ? "Stop" : "Start"}</StartText>
         </LinearGradient>
       </AnimatedStartButton>
+
+ {/* Timer Buttons */}
+ <TimerButtonsContainer>
+        {[1, 5, 10].map((time) => (
+          <TimerButton
+            key={time}
+            selected={selectedTime === time}
+            onPress={() => setSelectedTime(time)}
+          >
+            <TimerText selected={selectedTime === time}>{time} min</TimerText>
+          </TimerButton>
+        ))}
+      </TimerButtonsContainer>
     </Container> 
     )
 }
