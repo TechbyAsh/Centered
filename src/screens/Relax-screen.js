@@ -1,58 +1,120 @@
-import React, {useState, useRef, useEffect} from "react";
-import  styled  from 'styled-components/native';
-import { SafeArea} from "../utils/safe-areacomponent";
-import {Text, View, TouchableOpacity} from "react-native"
-import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons } from "@expo/vector-icons";
+import React, { useState, useRef, useEffect } from "react";
+import styled, { useTheme } from 'styled-components/native';
+import { View, TouchableOpacity, Platform } from "react-native";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
 import { useDashboardData } from '../hooks/useDashboardData';
 
-const Container = styled(LinearGradient)`
+const Container = styled.View`
   flex: 1;
+  background-color: ${({ theme }) => theme.colors.background};
+  padding: ${Platform.OS === 'ios' ? '50px 20px' : '20px'};
+`;
+
+
+const Header = styled.View`
+  margin-bottom: 30px;
+`;
+
+const HeaderContent = styled.View`
+  flex-direction: row;
+  justify-content: space-between;
   align-items: center;
+  margin-bottom: 15px;
+`;
+
+const Title = styled.Text`
+  font-size: 24px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.text};
+  font-family: ${({ theme }) => theme.fonts.heading};
+  margin-bottom: 8px;
+`;
+
+const SubTitle = styled.Text`
+  font-size: 14px;
+  color: ${({ theme }) => theme.colors.textLight};
+  margin-bottom: 4px;
+`;
+const MetricsContainer = styled.View`
+  flex-direction: row;
+  justify-content: space-between;
+  margin-bottom: 24px;
+`;
+
+const MetricItem = styled.View`
+  align-items: flex-start;
+`;
+
+const MetricLabel = styled.Text`
+  font-size: 12px;
+  color: ${({ theme }) => theme.colors.textLight};
+  margin-bottom: 4px;
+`;
+
+const MetricValue = styled.Text`
+  font-size: 16px;
+  font-weight: bold;
+  color: ${({theme}) => theme.colors.text};
+`;
+
+const ContentContainer = styled.View`
+  flex: 1;
   padding: 20px;
 `;
 
-
-const Title = styled.Text`
-  font-family: ${({ theme }) => theme.fonts.heading};
-  font-size: 30px;
-  font-weight: bold;
-  color: #4a4a4a;
-  margin-bottom: 10px;
-  top: 100px;
-`;
-const CloseButton = styled.TouchableOpacity`
-  position: absolute;
-  top: 50px;
-  right: 20px;
-  padding: 10px;
+const PlayerCard = styled.View`
+  background-color: ${({theme}) => theme.colors.surface};
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 20px;
 `;
 
 const SoundGrid = styled.View`
-position: absolute;
-  bottom: 60px;
   flex-direction: row;
   flex-wrap: wrap;
-  justify-content: center;
-  gap: 20px;
+  justify-content: space-between;
+  margin-top: 20px;
 `;
 
 const SoundButton = styled.TouchableOpacity`
+  width: ${(Platform.OS === 'ios' ? '80px' : '72px')};
+  height: ${(Platform.OS === 'ios' ? '80px' : '72px')};
+  justify-content: center;
   align-items: center;
-  width: 80px;
+  background-color: ${({theme, isPlaying}) => 
+    isPlaying ? theme.colors.primaryLight : theme.colors.surface};
+  border-radius: 16px;
+  margin: 8px;
+  elevation: 2;
+  ${Platform.OS === 'ios' && `
+    shadow-color: #000;
+    shadow-offset: 0px 2px;
+    shadow-opacity: 0.25;
+    shadow-radius: 3.84px;
+  `}
 `;
 
 const SoundText = styled.Text`
-  margin-top: 5px;
-  color: #4a4a4a;
+  font-size: 12px;
+  color: ${({theme}) => theme.colors.text};
+  margin-top: 4px;
+  text-align: center;
 `;
 
 const ControlButton = styled.TouchableOpacity`
-  margin-top: 250px;
-  justify-content: center;
+  align-self: center;
+  margin: 20px 0;
+`;
+
+const BottomBar = styled.View`
+  flex-direction: row;
+  justify-content: space-between;
   align-items: center;
-  
+  padding: 16px 24px;
+  background-color: ${({ theme }) => theme.colors.card};
+  border-radius: 28px;
+  margin-top: auto;
 `;
 const sounds = [
     { name: "Rain", icon: "rainy-outline", file: require("../../assets/sounds/birdSound.wav") },
@@ -68,8 +130,17 @@ const sounds = [
 export const RelaxScreen = ({navigation}) => {
     const [playingSounds, setPlayingSounds] = useState({});
     const [sessionStartTime, setSessionStartTime] = useState(null);
+    const [currentTime, setCurrentTime] = useState(new Date());
     const soundRefs = useRef({});
     const { addSession } = useDashboardData();
+    const theme = useTheme();
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentTime(new Date());
+        }, 1000);
+        return () => clearInterval(timer);
+    }, []);
 
     // Toggle play/pause for individual sounds
   const toggleSound = async (soundName, file) => {
@@ -132,34 +203,91 @@ export const RelaxScreen = ({navigation}) => {
     setSessionStartTime(null);
   };
   
+const formatTime = (date) => {
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
   return (
-    <Container 
-    colors={["#6294C2", "#ffffff"]}
-    start={{ x: 0.5, y: 0 }}
-    end={{ x: 0.5, y: 1 }}>
-        <CloseButton onPress={() => navigation.goBack()}>
-        <Ionicons name="close" size={28} color="#00A896" />
-      </CloseButton>
+    <Container>
+      <Header>
+        <HeaderContent>
+          <View>
+            <SubTitle>{formatTime(currentTime)}</SubTitle>
+            <Title>Relax Mode</Title>
+          </View>
+          <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
+            <Ionicons name="grid-outline" size={24} color={theme.colors.text} />
+          </TouchableOpacity>
+        </HeaderContent>
 
-      <Title>Select the sounds and relax...</Title>
-    
-      <ControlButton onPress={ stopAllSounds}>
-        <Ionicons
-          name={"stop-circle"}
-          size={100}
-          color= "#A8DADC"
-        />
-      </ControlButton>
+        <MetricsContainer>
+          <MetricItem>
+            <MetricLabel>Room temp</MetricLabel>
+            <MetricValue>24°C</MetricValue>
+          </MetricItem>
+          <MetricItem>
+            <MetricLabel>Humidity</MetricLabel>
+            <MetricValue>66%</MetricValue>
+          </MetricItem>
+          <MetricItem>
+            <MetricLabel>Duration</MetricLabel>
+            <MetricValue>04:35</MetricValue>
+          </MetricItem>
+        </MetricsContainer>
+      </Header>
 
-      <SoundGrid>
-        {sounds.map(({ name, icon, file }) => (
-          <SoundButton key={name} onPress={() => toggleSound(name, file)}>
-            <Ionicons name={icon} size={36} color={playingSounds[name] ? "#6a9c78" : "#4a4a4a"} />
-            <SoundText>{name}</SoundText>
-          </SoundButton>
-        ))}
-      </SoundGrid>
+      <ContentContainer>
+        <PlayerCard>
+          <Title>A soothing atmosphere</Title>
+          <SubTitle>Mix sounds for rest and recovery</SubTitle>
+
+          <SoundGrid>
+            {sounds.map(({ name, icon, file }) => (
+              <SoundButton 
+                key={name} 
+                onPress={() => toggleSound(name, file)}
+                isPlaying={playingSounds[name]}
+              >
+                <Ionicons 
+                  name={icon} 
+                  size={32} 
+                  color={playingSounds[name] ? theme.colors.primary : theme.colors.text} 
+                />
+                <SoundText>{name}</SoundText>
+              </SoundButton>
+            ))}
+          </SoundGrid>
+        </PlayerCard>
+
+        <ControlButton onPress={stopAllSounds}>
+          <Ionicons
+            name="stop-circle"
+            size={48}
+            color={theme.colors.primary}
+          />
+        </ControlButton>
+
+        <BottomBar>
+          <TouchableOpacity>
+            <Ionicons name="home" size={24} color={theme.colors.text} />
+          </TouchableOpacity>
+          <TouchableOpacity>
+            <MaterialCommunityIcons name="meditation" size={24} color={theme.colors.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity>
+            <Ionicons name="water" size={24} color={theme.colors.text} />
+          </TouchableOpacity>
+          <TouchableOpacity>
+            <Ionicons name="leaf" size={24} color={theme.colors.text} />
+          </TouchableOpacity>
+        </BottomBar>
+      </ContentContainer>
 
     </Container>
   );
 };
+
