@@ -14,11 +14,18 @@ const Container = styled(LinearGradient)`
 
 
 const Title = styled.Text`
+  font-family: ${({ theme }) => theme.fonts.heading};
   font-size: 30px;
   font-weight: bold;
   color: #4a4a4a;
-  margin-bottom: 20px;
-  top: 60px;
+  margin-bottom: 10px;
+  top: 100px;
+`;
+const CloseButton = styled.TouchableOpacity`
+  position: absolute;
+  top: 50px;
+  right: 20px;
+  padding: 10px;
 `;
 
 const SoundGrid = styled.View`
@@ -57,36 +64,57 @@ const sounds = [
     { name: "Noise", icon: "volume-high-outline", file: require("../../assets/sounds/white-noise.wav") },
   ];
 
-export const RelaxScreen = () => {
+export const RelaxScreen = ({navigation}) => {
     const [playingSounds, setPlayingSounds] = useState({});
-    const [meditationPlaying, setMeditationPlaying] = useState(false);
     const soundRefs = useRef({});
 
-    const toggleSound = async (soundName, file) => {
-        if (playingSounds[soundName]) {
-          await soundRefs.current[soundName]?.stopAsync();
-          setPlayingSounds((prev) => ({ ...prev, [soundName]: false }));
-        } else {
+    // Toggle play/pause for individual sounds
+  const toggleSound = async (soundName, file) => {
+    try {
+      if (playingSounds[soundName]) {
+        // Pause the sound if it's already playing
+        await soundRefs.current[soundName]?.pauseAsync();
+        setPlayingSounds((prev) => ({ ...prev, [soundName]: false }));
+      } else {
+        if (!soundRefs.current[soundName]) {
+          // Create and play sound if it hasn't been created yet
           const { sound } = await Audio.Sound.createAsync(file, { shouldPlay: true, isLooping: true });
           soundRefs.current[soundName] = sound;
-          setPlayingSounds((prev) => ({ ...prev, [soundName]: true }));
+        } else {
+          // Resume sound if it was paused
+          await soundRefs.current[soundName]?.playAsync();
         }
-      };
-
-  const toggleMeditation = () => {
-    setMeditationPlaying((prev) => !prev);
+        setPlayingSounds((prev) => ({ ...prev, [soundName]: true }));
+      }
+    } catch (error) {
+      console.error("Error playing sound:", error);
+    }
   };
 
+  // Stop all sounds at once
+  const stopAllSounds = async () => {
+    for (const soundName in soundRefs.current) {
+      await soundRefs.current[soundName]?.stopAsync();
+      await soundRefs.current[soundName]?.unloadAsync(); // Free up resources
+    }
+    soundRefs.current = {}; // Reset sound references
+    setPlayingSounds({});
+  };
+  
   return (
     <Container 
     colors={["#6294C2", "#ffffff"]}
     start={{ x: 0.5, y: 0 }}
     end={{ x: 0.5, y: 1 }}>
+        <CloseButton onPress={() => navigation.goBack()}>
+        <Ionicons name="close" size={28} color="#00A896" />
+      </CloseButton>
+
       <Title>Select the sounds and relax...</Title>
     
-      <ControlButton onPress={toggleMeditation}>
+      <ControlButton onPress={ stopAllSounds}>
         <Ionicons
-          name={meditationPlaying ? "pause-circle" : "play-circle"}
+          name={"stop-circle"}
           size={100}
           color= "#A8DADC"
         />

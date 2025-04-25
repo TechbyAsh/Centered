@@ -1,18 +1,18 @@
-import React, {useState, useEffect, useRef} from "react";
-import  styled  from 'styled-components/native';
-import { SafeArea} from "../utils/safe-areacomponent";
+import React, { useState, useEffect, useRef } from 'react';
+import styled from 'styled-components/native';
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import {Text, View, Animated, TouchableOpacity, Easing} from "react-native"
+import { Animated, TouchableOpacity, ScrollView, Alert } from "react-native";
+import { BREATHING_PATTERNS } from '../infrastructure/breathing/patterns';
+import { useBreathingAnimation } from '../infrastructure/breathing/useBreathingAnimation';
+import { useTimer } from '../infrastructure/hooks/useTimer';
+import { SoundModal } from '../components/SoundModal';
 
 
 /* Styled Components */
 const Container = styled.View`
   flex: 1;
   background-color: #d8fcf8;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
 `;
 
 const CloseButton = styled.TouchableOpacity`
@@ -31,6 +31,7 @@ const InstructionText = styled.Text`
   text-align: left;
   align-self: flex-start;
   font-weight: 400;
+  font-family:  ${({ theme }) => theme.fonts.heading};
 `;
 
 const AnimatedStartButton = styled(Animated.createAnimatedComponent(TouchableOpacity))`
@@ -51,12 +52,63 @@ const StartText = styled.Text`
   font-weight: 600;
 `;
 
+const TimerContainer = styled.View`
+  position: absolute;
+  bottom: 140px;
+  align-items: center;
+  width: 100%;
+`;
+
+const CountdownText = styled.Text`
+  font-size: 24px;
+  color: #00A896;
+  font-family: ${({ theme }) => theme.fonts.heading};
+  margin-bottom: 10px;
+`;
+
+const ProgressBar = styled.View`
+  width: 80%;
+  height: 4px;
+  background-color: #E6F7F5;
+  border-radius: 2px;
+  overflow: hidden;
+`;
+
+const ProgressFill = styled(Animated.View)`
+  height: 100%;
+  background-color: #00A896;
+`;
+
 const TimerButtonsContainer = styled.View`
   position: absolute;
   bottom: 60px;
   justify-content: center;
   flex-direction: row;
   width: 100%;
+`;
+
+const MainSection = styled.View`
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+`;
+
+const SoundButton = styled.TouchableOpacity`
+  position: absolute;
+  right: 20px;
+  top: 20px;
+  width: 44px;
+  height: 44px;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 22px;
+  justify-content: center;
+  align-items: center;
+  shadow-color: #000;
+  shadow-offset: 0px 2px;
+  shadow-opacity: 0.25;
+  shadow-radius: 3.84px;
+  elevation: 5;
 `;
 
 const TimerButton = styled.TouchableOpacity`
@@ -73,120 +125,160 @@ const TimerText = styled.Text`
   font-weight: 600;
 `;
 
-export const BreatheScreen = ({navigation}) => {
-  const [isActive , setIsActive] = useState(false)
-  const [selectedTime, setSelectedTime] = useState(1); // Default: 1 minute
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const glowAnim = useRef(new Animated.Value(0.5)).current;
-  const scaleLoopRef = useRef(null);
-  const glowLoopRef = useRef(null);
+const PatternButton = styled.TouchableOpacity`
+  background-color: ${({ selected }) => (selected ? '#00A896' : '#FFFFFF')};
+  padding: 15px;
+  margin: 10px;
+  border-radius: 15px;
+  border: 2px solid #00A896;
+  width: 150px;
+`;
 
-  const getDuration = () => selectedTime * 60000; // Convert minutes to milliseconds
+const PatternText = styled.Text`
+  font-size: 16px;
+  color: ${({ selected }) => (selected ? 'white' : '#00A896')};
+  font-weight: 600;
+  text-align: center;
+`;
 
-  const startAnimations = () => {
-    scaleLoopRef.current = Animated.loop(
-      Animated.sequence([
-        Animated.timing(scaleAnim, {
-          toValue: 3.0,
-          duration: 4000,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(scaleAnim, {
-          toValue: 1,
-          duration: 4000,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ])
-    );
+const PatternDescription = styled.Text`
+  font-size: 14px;
+  color: ${({ selected }) => (selected ? '#E6F7F5' : '#666')};
+  text-align: center;
+  margin-top: 5px;
+`;
 
-    glowLoopRef.current = Animated.loop(
-      Animated.sequence([
-        Animated.timing(glowAnim, {
-          toValue: 1,
-          duration: 5000,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(glowAnim, {
-          toValue: 0.5,
-          duration: 5000,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ])
-    );
-    scaleLoopRef.current.start();
-    glowLoopRef.current.start();
+const PatternsContainer = styled.View`
+  position: absolute;
+  top: 120px;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 10px;
+`;
 
-    // Stop after selected duration
-    setTimeout(() => {
-      stopAnimations();
-      setIsActive(false);
-    }, getDuration());
-  };
+const defaultPattern = BREATHING_PATTERNS.default;
 
-  
-  
+export const BreatheScreen = ({ navigation }) => {
+  const [selectedPattern, setSelectedPattern] = useState(defaultPattern);
+  const [isActive, setIsActive] = useState(false);
+  const [selectedTime, setSelectedTime] = useState(5);
+  const [showSoundModal, setShowSoundModal] = useState(false);
 
-  const stopAnimations = () => {
-    scaleLoopRef.current?.stop();
-    glowLoopRef.current?.stop();
-  };
+  const { scaleAnim, glowAnim } = useBreathingAnimation(selectedPattern, isActive);
+  const { formattedTime, progress } = useTimer(selectedTime, isActive);
+
+  const progressAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (isActive) {
+      Animated.timing(progressAnim, {
+        toValue: 0,
+        duration: selectedTime * 60000,
+        useNativeDriver: false,
+      }).start(() => {
+        setIsActive(false);
+      });
+    } else {
+      progressAnim.setValue(1);
+    }
+
+    return () => {
+      progressAnim.setValue(1);
+    };
+  }, [isActive, selectedTime]);
 
   const handlePress = () => {
-    if (isActive) {
-      stopAnimations();
-    } else {
-      startAnimations();
-    }
     setIsActive(!isActive);
   };
 
-    return (
-            <Container>
-      {/* Close Button */}
-      <CloseButton onPress={() => navigation.goBack()}>
-        <Ionicons name="close" size={28} color="#00A896" />
-      </CloseButton>
+  const handlePatternSelect = (pattern) => {
+    if (!isActive) {
+      setSelectedPattern(pattern);
+    }
+  };
 
-      {/* Instruction Text */}
-      <InstructionText>
-        Be still.{"\n"}Bring your attention{"\n"}to your breath.
-      </InstructionText>
+  return (
+    <Container>
+      <MainSection>
+        <CloseButton onPress={() => navigation.goBack()}>
+          <Ionicons name="close" size={28} color="#00A896" />
+        </CloseButton>
 
-      {/* Animated Start/Stop Button */}
-      <AnimatedStartButton
-        style={{ transform: [{ scale: scaleAnim }], opacity: glowAnim }}
-        onPress={handlePress}
-      >
-        <LinearGradient
-          colors={["#00A896", "#028090"]}
-          style={{
-            borderRadius: 50,
-            width: "100%",
-            height: "100%",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
+        <SoundButton onPress={() => setShowSoundModal(true)}>
+          <Ionicons name="musical-notes-outline" size={24} color="#00A896" />
+        </SoundButton>
+
+        <InstructionText>
+          {selectedPattern?.name || 'Basic Breath'}
+        </InstructionText>
+
+        <PatternsContainer>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {Object.entries(BREATHING_PATTERNS).map(([key, pattern]) => (
+              <PatternButton
+                key={key}
+                selected={selectedPattern.name === pattern.name}
+                onPress={() => handlePatternSelect(pattern)}
+                disabled={isActive}
+              >
+                <PatternText selected={selectedPattern.name === pattern.name}>
+                  {pattern.name}
+                </PatternText>
+                <PatternDescription selected={selectedPattern.name === pattern.name}>
+                  {pattern.description}
+                </PatternDescription>
+              </PatternButton>
+            ))}
+          </ScrollView>
+        </PatternsContainer>
+
+        <AnimatedStartButton
+          style={{ transform: [{ scale: scaleAnim }], opacity: glowAnim }}
+          onPress={handlePress}
         >
-          <StartText>{isActive ? "Stop" : "Start"}</StartText>
-        </LinearGradient>
-      </AnimatedStartButton>
-
- {/* Timer Buttons */}
- <TimerButtonsContainer>
-        {[1, 5, 10].map((time) => (
-          <TimerButton
-            key={time}
-            selected={selectedTime === time}
-            onPress={() => setSelectedTime(time)}
+          <LinearGradient
+            colors={selectedPattern?.color || ['#00A896', '#02C39A']}
+            style={{
+              borderRadius: 50,
+              width: "100%",
+              height: "100%",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
           >
-            <TimerText selected={selectedTime === time}>{time} min</TimerText>
-          </TimerButton>
-        ))}
-      </TimerButtonsContainer>
-    </Container> 
-    )
+            <StartText>{isActive ? "Stop" : "Start"}</StartText>
+          </LinearGradient>
+        </AnimatedStartButton>
+
+        <TimerContainer>
+          <CountdownText>{formattedTime}</CountdownText>
+          <ProgressBar>
+            <ProgressFill style={{ width: progressAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: ['0%', '100%'],
+            })}} />
+          </ProgressBar>
+        </TimerContainer>
+
+        <TimerButtonsContainer>
+          {[1, 5, 10].map((time) => (
+            <TimerButton
+              key={time}
+              selected={selectedTime === time}
+              onPress={() => !isActive && setSelectedTime(time)}
+              disabled={isActive}
+            >
+              <TimerText selected={selectedTime === time}>{time} min</TimerText>
+            </TimerButton>
+          ))}
+        </TimerButtonsContainer>
+      </MainSection>
+
+      <SoundModal
+        visible={showSoundModal}
+        onClose={() => setShowSoundModal(false)}
+      />
+    </Container>
+  );
 }

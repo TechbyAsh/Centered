@@ -5,6 +5,7 @@ import { ThemeProvider } from "styled-components/native";
 import { theme } from './src/infrastructure/theme/theme.index';
 import { useFonts, PlayfairDisplay_400Regular } from '@expo-google-fonts/playfair-display';
 import { Poppins_400Regular } from '@expo-google-fonts/poppins';
+import { AppProvider } from './src/infrastructure/context/AppContext';
 
 import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer } from '@react-navigation/native';
@@ -36,7 +37,8 @@ export default function App() {
 
   return (
     <>
-    <ThemeProvider theme={theme}>
+    <AppProvider>
+      <ThemeProvider theme={theme}>
       <NavigationContainer>
       <HomeStack.Navigator  
       screenOptions={{
@@ -51,6 +53,7 @@ export default function App() {
     </HomeStack.Navigator>
     </NavigationContainer>
     </ThemeProvider>
+    </AppProvider>
    <StatusBar style="auto" />
    </>
   ) 
