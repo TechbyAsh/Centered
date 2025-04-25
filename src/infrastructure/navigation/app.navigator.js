@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { DashboardScreen } from '../../screens/Dashboard-screen';
 import { BreatheScreen } from '../../screens/Breathe-screen';
 import { RelaxScreen } from '../../screens/Relax-screen';
+import { MeditationScreen } from '../../screens/Meditation-screen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -18,6 +19,12 @@ const BreatheStack = () => (
 const RelaxStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="RelaxMain" component={RelaxScreen} />
+  </Stack.Navigator>
+);
+
+const MeditationStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="MeditationMain" component={MeditationScreen} />
   </Stack.Navigator>
 );
 
@@ -35,6 +42,8 @@ export const AppNavigator = () => {
             iconName = focused ? 'leaf' : 'leaf-outline';
           } else if (route.name === 'Relax') {
             iconName = focused ? 'moon' : 'moon-outline';
+          } else if (route.name === 'Meditate') {
+            iconName = focused ? 'flower' : 'flower-outline';
           }
 
           return <Ionicons name={iconName} size={size} color={color} />;
@@ -59,6 +68,7 @@ export const AppNavigator = () => {
       <Tab.Screen name="Dashboard" component={DashboardScreen} />
       <Tab.Screen name="Breathe" component={BreatheStack} />
       <Tab.Screen name="Relax" component={RelaxStack} />
+      <Tab.Screen name="Meditate" component={MeditationStack} />
     </Tab.Navigator>
   );
 };
