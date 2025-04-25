@@ -43,11 +43,11 @@ export const WelcomeScreen = ({navigation}) => {
     <Container>
       <Title>What brings you here today?</Title>
 
-      <Button color="#1ABC9C" onPress={() => navigation.navigate("Breathe")}>
+      <Button color="#1ABC9C" onPress={() => navigation.navigate("App", { screen: "Breathe" })}>
         <ButtonText>Breathe</ButtonText>
       </Button>
 
-      <Button color="#3498DB" onPress={() => navigation.navigate("Relax")}>
+      <Button color="#3498DB" onPress={() => navigation.navigate("App", { screen: "Relax" })}>
         <ButtonText>Relax</ButtonText>
       </Button>
 

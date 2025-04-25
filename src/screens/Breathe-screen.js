@@ -7,6 +7,7 @@ import { BREATHING_PATTERNS } from '../infrastructure/breathing/patterns';
 import { useBreathingAnimation } from '../infrastructure/breathing/useBreathingAnimation';
 import { useTimer } from '../infrastructure/hooks/useTimer';
 import { SoundModal } from '../components/SoundModal';
+import { useDashboardData } from '../hooks/useDashboardData';
 
 
 /* Styled Components */
@@ -167,6 +168,7 @@ export const BreatheScreen = ({ navigation }) => {
 
   const { scaleAnim, glowAnim } = useBreathingAnimation(selectedPattern, isActive);
   const { formattedTime, progress } = useTimer(selectedTime, isActive);
+  const { addSession } = useDashboardData();
 
   const progressAnim = useRef(new Animated.Value(1)).current;
 
@@ -178,6 +180,12 @@ export const BreatheScreen = ({ navigation }) => {
         useNativeDriver: false,
       }).start(() => {
         setIsActive(false);
+        // Save the completed session
+        addSession({
+          type: 'Breathing',
+          duration: selectedTime,
+          pattern: selectedPattern.name
+        });
       });
     } else {
       progressAnim.setValue(1);

@@ -1,10 +1,11 @@
-import React, {useState, useRef} from "react";
+import React, {useState, useRef, useEffect} from "react";
 import  styled  from 'styled-components/native';
 import { SafeArea} from "../utils/safe-areacomponent";
 import {Text, View, TouchableOpacity} from "react-native"
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
+import { useDashboardData } from '../hooks/useDashboardData';
 
 const Container = styled(LinearGradient)`
   flex: 1;
@@ -66,7 +67,9 @@ const sounds = [
 
 export const RelaxScreen = ({navigation}) => {
     const [playingSounds, setPlayingSounds] = useState({});
+    const [sessionStartTime, setSessionStartTime] = useState(null);
     const soundRefs = useRef({});
+    const { addSession } = useDashboardData();
 
     // Toggle play/pause for individual sounds
   const toggleSound = async (soundName, file) => {
@@ -75,6 +78,18 @@ export const RelaxScreen = ({navigation}) => {
         // Pause the sound if it's already playing
         await soundRefs.current[soundName]?.pauseAsync();
         setPlayingSounds((prev) => ({ ...prev, [soundName]: false }));
+        
+        // If no sounds are playing after this one is paused, end the session
+        const stillPlaying = Object.values(playingSounds).some(isPlaying => isPlaying && isPlaying !== soundName);
+        if (!stillPlaying && sessionStartTime) {
+          const duration = Math.round((Date.now() - sessionStartTime) / 60000); // Convert to minutes
+          addSession({
+            type: 'Relax',
+            duration: duration,
+            soundscape: Object.keys(playingSounds).filter(sound => playingSounds[sound]).join(', ')
+          });
+          setSessionStartTime(null);
+        }
       } else {
         if (!soundRefs.current[soundName]) {
           // Create and play sound if it hasn't been created yet
@@ -85,6 +100,11 @@ export const RelaxScreen = ({navigation}) => {
           await soundRefs.current[soundName]?.playAsync();
         }
         setPlayingSounds((prev) => ({ ...prev, [soundName]: true }));
+        
+        // Start session timer if this is the first sound playing
+        if (!sessionStartTime) {
+          setSessionStartTime(Date.now());
+        }
       }
     } catch (error) {
       console.error("Error playing sound:", error);
@@ -93,12 +113,23 @@ export const RelaxScreen = ({navigation}) => {
 
   // Stop all sounds at once
   const stopAllSounds = async () => {
+    // If session was active, save it
+    if (sessionStartTime && Object.values(playingSounds).some(isPlaying => isPlaying)) {
+      const duration = Math.round((Date.now() - sessionStartTime) / 60000); // Convert to minutes
+      addSession({
+        type: 'Relax',
+        duration: duration,
+        soundscape: Object.keys(playingSounds).filter(sound => playingSounds[sound]).join(', ')
+      });
+    }
+    
     for (const soundName in soundRefs.current) {
       await soundRefs.current[soundName]?.stopAsync();
       await soundRefs.current[soundName]?.unloadAsync(); // Free up resources
     }
     soundRefs.current = {}; // Reset sound references
     setPlayingSounds({});
+    setSessionStartTime(null);
   };
   
   return (
