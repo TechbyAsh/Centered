@@ -8,6 +8,7 @@ import { RelaxScreen } from '../../screens/Relax-screen';
 import { MeditationScreen } from '../../screens/Meditation-screen';
 import { RitualsScreen } from '../../screens/Rituals-screen';
 import { RitualSessionScreen } from '../../screens/RitualSession-screen';
+import { SettingsScreen } from '../../screens/Settings-screen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -34,6 +35,13 @@ const RitualsStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="RitualsMain" component={RitualsScreen} />
     <Stack.Screen name="RitualSession" component={RitualSessionScreen} />
+  </Stack.Navigator>
+);
+
+const DashboardStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="DashboardMain" component={DashboardScreen} />
+    <Stack.Screen name="Settings" component={SettingsScreen} />
   </Stack.Navigator>
 );
 
@@ -76,7 +84,7 @@ export const AppNavigator = () => {
         },
       })}
     >
-      <Tab.Screen name="Dashboard" component={DashboardScreen} />
+      <Tab.Screen name="Dashboard" component={DashboardStack} />
       <Tab.Screen name="Breathe" component={BreatheStack} />
       <Tab.Screen name="Relax" component={RelaxStack} />
       <Tab.Screen name="Meditate" component={MeditationStack} />

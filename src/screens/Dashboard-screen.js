@@ -1,13 +1,14 @@
 import React from 'react';
 import styled from 'styled-components/native';
-import { ScrollView, Dimensions } from 'react-native';
+import { ScrollView, Dimensions, TouchableOpacity } from 'react-native';
 import { Ionicons } from "@expo/vector-icons";
 import { LineChart } from 'react-native-chart-kit';
 import { useDashboardData } from '../hooks/useDashboardData';
+import { RecommendedActivities } from '../components/RecommendedActivities';
 
 const Container = styled.View`
   flex: 1;
-  background-color: #F7FFFE;
+  background-color: ${props => props.theme.colors.background};
   padding: 20px;
 `;
 
@@ -124,8 +125,6 @@ const SessionDetails = styled.Text`
   margin-top: 3px;
 `;
 
-
-
 export const DashboardScreen = ({ navigation }) => {
   const screenWidth = Dimensions.get('window').width;
   const { 
@@ -139,9 +138,17 @@ export const DashboardScreen = ({ navigation }) => {
 
   return (
     <Container>
+      <Header>
+        <Title>Dashboard</Title>
+        <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
+          <Ionicons name="settings-outline" size={24} color="#00A896" />
+        </TouchableOpacity>
+      </Header>
+      
       <ScrollView showsVerticalScrollIndicator={false}>
+        <RecommendedActivities navigation={navigation} />
         <Header>
-          <Title>Dashboard</Title>
+          <SectionTitle>Dashboard</SectionTitle>
           <Ionicons name="settings-outline" size={24} color="#00A896" />
         </Header>
 
