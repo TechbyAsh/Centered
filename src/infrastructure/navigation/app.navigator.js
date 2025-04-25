@@ -6,6 +6,8 @@ import { DashboardScreen } from '../../screens/Dashboard-screen';
 import { BreatheScreen } from '../../screens/Breathe-screen';
 import { RelaxScreen } from '../../screens/Relax-screen';
 import { MeditationScreen } from '../../screens/Meditation-screen';
+import { RitualsScreen } from '../../screens/Rituals-screen';
+import { RitualSessionScreen } from '../../screens/RitualSession-screen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -28,6 +30,13 @@ const MeditationStack = () => (
   </Stack.Navigator>
 );
 
+const RitualsStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="RitualsMain" component={RitualsScreen} />
+    <Stack.Screen name="RitualSession" component={RitualSessionScreen} />
+  </Stack.Navigator>
+);
+
 export const AppNavigator = () => {
   return (
     <Tab.Navigator
@@ -44,6 +53,8 @@ export const AppNavigator = () => {
             iconName = focused ? 'moon' : 'moon-outline';
           } else if (route.name === 'Meditate') {
             iconName = focused ? 'flower' : 'flower-outline';
+          } else if (route.name === 'Rituals') {
+            iconName = focused ? 'water' : 'water-outline';
           }
 
           return <Ionicons name={iconName} size={size} color={color} />;
@@ -69,6 +80,7 @@ export const AppNavigator = () => {
       <Tab.Screen name="Breathe" component={BreatheStack} />
       <Tab.Screen name="Relax" component={RelaxStack} />
       <Tab.Screen name="Meditate" component={MeditationStack} />
+      <Tab.Screen name="Rituals" component={RitualsStack} />
     </Tab.Navigator>
   );
 };
