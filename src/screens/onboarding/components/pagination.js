@@ -1,73 +1,54 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { useWindowDimensions, View } from 'react-native';
 import Animated, {
   Extrapolation,
   interpolate,
   useAnimatedStyle,
 } from 'react-native-reanimated';
-
+import styled from 'styled-components/native';
 import { theme } from '../../../infrastructure/theme/theme.index';
 
-const PaginationComp = ({ index, x, screenWidth }) => {
-  const animatedDotStyle = useAnimatedStyle(() => {
-    const widthAnimation = interpolate(
-      x.value,
-      [
-        (index - 1) * screenWidth,
-        index * screenWidth,
-        (index + 1) * screenWidth,
-      ],
-      [10, 20, 10],
-      Extrapolation.CLAMP
-    );
+const Dot = styled(Animated.View)`
+  height: 10px;
+  border-radius: 5px;
+  background-color: ${theme.colors.primary};
+  margin: 0 8px;
+`;
 
-    const opacityAnimation = interpolate(
-      x.value,
-      [
-        (index - 1) * screenWidth,
-        index * screenWidth,
-        (index + 1) * screenWidth,
-      ],
-      [0.5, 1, 0.5],
-      Extrapolation.CLAMP
-    );
+export const Pagination = ({ data, x }) => {
+  const { width: SCREEN_WIDTH } = useWindowDimensions();
 
-    return {
-      width: widthAnimation,
-      opacity: opacityAnimation,
-    };
-  });
+  return (
+    <Container>
+      {data.map((_, i) => {
+        const dotAnimatedStyle = useAnimatedStyle(() => {
+          const widthAnimation = interpolate(
+            x.value,
+            [(i - 1) * SCREEN_WIDTH, i * SCREEN_WIDTH, (i + 1) * SCREEN_WIDTH],
+            [10, 20, 10],
+            Extrapolation.CLAMP
+          );
 
-  return <Animated.View style={[styles.dots, animatedDotStyle]} />;
+          const opacityAnimation = interpolate(
+            x.value,
+            [(i - 1) * SCREEN_WIDTH, i * SCREEN_WIDTH, (i + 1) * SCREEN_WIDTH],
+            [0.5, 1, 0.5],
+            Extrapolation.CLAMP
+          );
+
+          return {
+            width: widthAnimation,
+            opacity: opacityAnimation,
+          };
+        });
+
+        return <Dot key={i} style={dotAnimatedStyle} />;
+      })}
+    </Container>
+  );
 };
 
-export function Pagination({ data, x, screenWidth }) {
-  return (
-    <View style={styles.container}>
-      {data.map((item, index) => (
-        <PaginationComp
-          key={item.id}
-          index={index}
-          x={x}
-          screenWidth={screenWidth}
-        />
-      ))}
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    height: 40,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dots: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: theme.colors.accent,
-    marginHorizontal: 10,
-  },
-});
+const Container = styled.View`
+  flex-direction: row;
+  align-items: center;
+`;

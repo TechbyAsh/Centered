@@ -10,10 +10,9 @@ import Animated, {
 } from 'react-native-reanimated';
 import styled from 'styled-components/native';
 
-import { Button } from '../onboarding/components/button';
-import { Pagination } from '../onboarding/components/pagination';
+import { Pagination } from './components/pagination';
 import { theme } from '../../infrastructure/theme/theme.index';
-import { data } from '../onboarding/screen.data';
+import { data } from './screen.data';
 
 const RenderItem = ({ item, index, x }) => {
   const { width: SCREEN_WIDTH } = useWindowDimensions();
@@ -74,7 +73,7 @@ const RenderItem = ({ item, index, x }) => {
   );
 };
 
-export function OnboardingScreen() {
+export function OnboardingScreen({ navigation }) {
   const { width: SCREEN_WIDTH } = useWindowDimensions();
   const flatListRef = useAnimatedRef();
 
@@ -91,6 +90,29 @@ export function OnboardingScreen() {
     },
   });
 
+  const handleGetStarted = () => {
+    navigation.replace('Dashboard');
+  };
+
+  const renderFooter = () => {
+    const isLastSlide = flatListIndex.value === data.length - 1;
+
+    return (
+      <FooterContainer>
+        {isLastSlide ? (
+          <GetStartedButton onPress={handleGetStarted}>
+            <ButtonText>Get Started</ButtonText>
+          </GetStartedButton>
+        ) : (
+          <SkipButton onPress={handleGetStarted}>
+            <SkipText>Skip</SkipText>
+          </SkipButton>
+        )}
+        <Pagination data={data} x={x} />
+      </FooterContainer>
+    );
+  };
+
   return (
     <Container>
       <Animated.FlatList
@@ -101,17 +123,16 @@ export function OnboardingScreen() {
         onScroll={onScroll}
         scrollEventThrottle={16}
         horizontal
-        showsHorizontalScrollIndicator={false}
         bounces={false}
         pagingEnabled
+        showsHorizontalScrollIndicator={false}
         onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={{
+          minimumViewTime: 300,
+          viewAreaCoveragePercentThreshold: 75,
+        }}
       />
-
-      <FooterContainer>
-        <Pagination data={data} screenWidth={SCREEN_WIDTH} x={x} />
-
-        <Button flatListRef={flatListRef} flatListIndex={flatListIndex} dataLength={data.length} />
-      </FooterContainer>
+      {renderFooter()}
     </Container>
   );
 }
@@ -145,8 +166,33 @@ const ItemText = styled.Text`
 `;
 
 const FooterContainer = styled.View`
-  flex-direction: row;
+  position: absolute;
+  bottom: 50px;
+  left: 0;
+  right: 0;
   align-items: center;
-  justify-content: space-between;
-  margin: 20px;
+`;
+
+const GetStartedButton = styled.TouchableOpacity`
+  background-color: ${theme.colors.primary};
+  padding: 16px 32px;
+  border-radius: 25px;
+  margin-top: 20px;
+`;
+
+const ButtonText = styled.Text`
+  color: ${theme.colors.white};
+  font-size: 18px;
+  font-weight: bold;
+`;
+
+const SkipButton = styled.TouchableOpacity`
+  padding: 16px;
+  margin-top: 20px;
+`;
+
+const SkipText = styled.Text`
+  color: ${theme.colors.text};
+  font-size: 16px;
+  opacity: 0.8;
 `;
