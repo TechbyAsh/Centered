@@ -93,7 +93,7 @@ const relaxSessions = [
     title: 'Body Scan',
     description: 'Release tension with a guided body scan',
     duration: 10,
-    audioFile: require('../../assets/sounds/sleep-meditation.mp3'),
+    audioFile: require('../assets/meditations/BodyScanMeditation.mp4'),
   },
   {
     id: 3,
@@ -111,15 +111,21 @@ export const RelaxScreen = ({ navigation }) => {
   const { addSession } = useDashboardData();
 
   const handleSessionPress = async (session) => {
-    setSelectedSession(session);
-    if (sound.current) {
-      await sound.current.unloadAsync();
+    try {
+      setSelectedSession(session);
+      if (sound.current) {
+        await sound.current.unloadAsync();
+      }
+      const { sound: newSound } = await Audio.Sound.createAsync(session.audioFile);
+      sound.current = newSound;
+      setIsPlaying(true);
+      await sound.current.playAsync();
+      addSession({ type: 'relax', duration: session.duration });
+    } catch (error) {
+      console.error('Error playing audio:', error);
+      setIsPlaying(false);
+      // You might want to show an error message to the user here
     }
-    const { sound: newSound } = await Audio.Sound.createAsync(session.audioFile);
-    sound.current = newSound;
-    setIsPlaying(true);
-    await sound.current.playAsync();
-    addSession({ type: 'relax', duration: session.duration });
   };
 
   const togglePlayPause = async () => {
