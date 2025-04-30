@@ -91,23 +91,41 @@ export function OnboardingScreen({ navigation }) {
   });
 
   const handleGetStarted = () => {
-    navigation.replace('Dashboard');
+    navigation.replace('Welcome');
   };
 
-  const renderFooter = () => {
-    const isLastSlide = flatListIndex.value === data.length - 1;
+  const animatedGetStartedStyle = useAnimatedStyle(() => {
+    const isLastSlide = Math.round(x.value / SCREEN_WIDTH) === data.length - 1;
+    return {
+      opacity: isLastSlide ? 1 : 0,
+      transform: [{ translateY: isLastSlide ? 0 : 20 }],
+      position: 'absolute',
+    };
+  });
 
+  const animatedSkipStyle = useAnimatedStyle(() => {
+    const isLastSlide = Math.round(x.value / SCREEN_WIDTH) === data.length - 1;
+    return {
+      opacity: isLastSlide ? 0 : 1,
+      transform: [{ translateY: isLastSlide ? -20 : 0 }],
+    };
+  });
+
+  const renderFooter = () => {
     return (
       <FooterContainer>
-        {isLastSlide ? (
-          <GetStartedButton onPress={handleGetStarted}>
-            <ButtonText>Get Started</ButtonText>
-          </GetStartedButton>
-        ) : (
-          <SkipButton onPress={handleGetStarted}>
-            <SkipText>Skip</SkipText>
-          </SkipButton>
-        )}
+        <ButtonContainer>
+          <Animated.View style={animatedSkipStyle}>
+            <SkipButton onPress={handleGetStarted}>
+              <SkipText>Skip</SkipText>
+            </SkipButton>
+          </Animated.View>
+          <Animated.View style={animatedGetStartedStyle}>
+            <GetStartedButton onPress={handleGetStarted}>
+              <ButtonText>Get Started</ButtonText>
+            </GetStartedButton>
+          </Animated.View>
+        </ButtonContainer>
         <Pagination data={data} x={x} />
       </FooterContainer>
     );
@@ -171,6 +189,15 @@ const FooterContainer = styled.View`
   left: 0;
   right: 0;
   align-items: center;
+  justify-content: center;
+  padding: 20px;
+`;
+
+const ButtonContainer = styled.View`
+  height: 60px;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
 `;
 
 const GetStartedButton = styled.TouchableOpacity`
