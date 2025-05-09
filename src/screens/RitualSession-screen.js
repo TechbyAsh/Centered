@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import styled from 'styled-components/native';
+import styled from '@emotion/native';
 import { Animated, Dimensions, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Audio } from 'expo-av';
+import { useTheme } from '@emotion/react';
 
 const { width, height } = Dimensions.get('window');
 
@@ -102,6 +103,7 @@ const Dot = styled.View`
 `;
 
 export const RitualSessionScreen = ({ route, navigation }) => {
+  const theme = useTheme();
   const { ritual } = route.params;
   const [currentStep, setCurrentStep] = useState(0);
   const [timeLeft, setTimeLeft] = useState(0);

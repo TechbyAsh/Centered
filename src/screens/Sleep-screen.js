@@ -1,10 +1,11 @@
 import React, {useRef, useState} from "react";
-import  styled  from 'styled-components/native';
+import styled from '@emotion/native';
 import {Text, View} from "react-native"
 import { LinearGradient } from "expo-linear-gradient";
 import LottieView from 'lottie-react-native';
 import { Ionicons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
+import { useTheme } from '@emotion/react';
 
 const Container = styled(LinearGradient)`
   flex: 1;
@@ -12,13 +13,12 @@ const Container = styled(LinearGradient)`
   padding: 20px;
 `;
 
- const AnimationWrapper = styled.View`
-  
+const AnimationWrapper = styled.View`
   width: 100%;
   height: 50%;
   justify-content: center;
   align-items: center; 
-  padding:${({ theme }) => theme.spacing.md};
+  padding: ${props => props.theme.spacing.md};
 `;
 
 const ContentWrapper = styled.View`
@@ -37,19 +37,20 @@ const CloseButton = styled.TouchableOpacity`
 const ControlButton = styled.TouchableOpacity`
   margin-top: 20px;
   padding: 15px 30px;
-  background-color: ${({ isPlaying }) => (isPlaying ? "#E63946" : "#00A896")};
+  background-color: ${props => props.isPlaying ? "#E63946" : "#00A896"};
   border-radius: 25px;
 `;
 
 const ButtonText = styled.Text`
   font-size: 18px;
   color: white;
-  font-family: ${({ theme }) => theme.fonts.body};
+  font-family: ${props => props.theme.fonts.body};
 `;
 
 export const SleepScreen = ({navigation}) => {
-    const animation = useRef(null);
-    const soundRef = useRef(null);
+  const theme = useTheme();
+  const animation = useRef(null);
+  const soundRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
   const playSound = async () => {
@@ -70,34 +71,28 @@ export const SleepScreen = ({navigation}) => {
     }
   };
 
-
-    return (
-             <Container 
-    colors={["#003366", "#0f52ba"]}
-    start={{ x: 0.5, y: 0 }}
-    end={{ x: 0.5, y: 1 }}>
-        
-        <CloseButton onPress={() => navigation.goBack()}>
+  return (
+    <Container 
+      colors={["#003366", "#0f52ba"]}
+      start={{ x: 0.5, y: 0 }}
+      end={{ x: 0.5, y: 1 }}>
+      <CloseButton onPress={() => navigation.goBack()}>
         <Ionicons name="close" size={28} color="#00A896" />
       </CloseButton>
-     <ContentWrapper>
-
-            <AnimationWrapper>
-        <LottieView
-          ref={animation}
-          autoPlay
-          loop
-          style={{ width: 300, height: 300 }}
-          source={require("../../assets/sleep-animation.json")}
-        />
-            </AnimationWrapper>
-        
+      <ContentWrapper>
+        <AnimationWrapper>
+          <LottieView
+            ref={animation}
+            autoPlay
+            loop
+            style={{ width: 300, height: 300 }}
+            source={require("../../assets/assets-1/sleep-animation.json")}
+          />
+        </AnimationWrapper>
         <ControlButton isPlaying={isPlaying} onPress={isPlaying ? stopSound : playSound}>
-        <ButtonText>{isPlaying ? "Stop Sound" : "Start Sound"}</ButtonText>
-      </ControlButton>
+          <ButtonText>{isPlaying ? "Stop Sound" : "Start Sound"}</ButtonText>
+        </ControlButton>
       </ContentWrapper>
-
-            </Container>
-     
-    )
+    </Container>
+  )
 }

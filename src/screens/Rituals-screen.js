@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import styled from 'styled-components/native';
+import styled from '@emotion/native';
 import { ScrollView, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useDashboardData } from '../hooks/useDashboardData';
+import { useTheme } from '@emotion/react';
 
 const Container = styled.View`
   flex: 1;
@@ -127,6 +128,7 @@ const rituals = [
 ];
 
 export const RitualsScreen = ({ navigation }) => {
+  const theme = useTheme();
   const [activeRitual, setActiveRitual] = useState(null);
   const { addSession } = useDashboardData();
 

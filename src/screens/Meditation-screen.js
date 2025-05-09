@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import styled, { useTheme } from 'styled-components/native';
+import styled from '@emotion/native';
 import { ScrollView, Dimensions, TouchableOpacity, Animated, View, Platform, Modal } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useDashboardData } from '../hooks/useDashboardData';
+import { useTheme } from '@emotion/react';
 
 const { width, height } = Dimensions.get('window');
 
@@ -221,21 +222,21 @@ const meditations = [
     title: 'Quick Calm',
     description: 'A brief meditation to find peace in a busy day',
     duration: 3,
-    audioFile: require('../assets/meditations/placeholder.mp3'),
+    audioFile: require('../../assets/meditations/placeholder.mp3'),
   },
   {
     id: 2,
     title: 'Mindful Break',
     description: 'Take a mindful pause to reset and refocus',
     duration: 5,
-    audioFile: require('../assets/meditations/placeholder.mp3'),
+    audioFile: require('../../assets/meditations/placeholder.mp3'),
   },
   {
     id: 3,
     title: 'Stress Relief',
     description: 'Release tension and find your center',
     duration: 7,
-    audioFile: require('../assets/meditations/placeholder.mp3'),
+    audioFile: require('../../assets/meditations/placeholder.mp3'),
   },
 ];
 

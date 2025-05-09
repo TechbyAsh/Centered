@@ -27,6 +27,9 @@ export const useDashboardData = () => {
         storage.getSessions()
       ]);
 
+      // Format data for svg-charts (simpler array format)
+      const weeklyData = stats.weeklyData || Array(7).fill(0);
+
       setData({
         weeklyMinutes: stats.totalMinutes || 0,
         sessionsCompleted: stats.sessionsCompleted || 0,
@@ -34,7 +37,7 @@ export const useDashboardData = () => {
         chartData: {
           labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
           datasets: [{
-            data: stats.weeklyData || Array(7).fill(0)
+            data: weeklyData
           }]
         },
         recentSessions: sessions.slice(0, 5).map(session => ({

@@ -1,7 +1,7 @@
 import React from "react";
-import  styled  from 'styled-components/native';
-import { SafeArea} from "../utils/safe-areacomponent";
-
+import styled from '@emotion/native';
+import { SafeArea } from "../utils/safe-areacomponent";
+import { useTheme } from '@emotion/react';
 
 const Container = styled.View`
   flex: 1;
@@ -26,7 +26,7 @@ const Button = styled.TouchableOpacity`
   margin-bottom: 15px;
   justify-content: center;
   align-items: center;
-  background-color: ${(props) => props.color};
+  background-color: ${props => props.color};
 `;
 
 const ButtonText = styled.Text`
@@ -35,26 +35,29 @@ const ButtonText = styled.Text`
   color: #ffffff;
 `;
 
-
 export const WelcomeScreen = ({navigation}) => {
-    return (
-        
-        <SafeArea>
-    <Container>
-      <Title>What brings you here today?</Title>
+  const theme = useTheme();
+  return (
+    <SafeArea>
+      <Container>
+        <Title>What brings you here today?</Title>
 
-      <Button color="#1ABC9C" onPress={() => navigation.navigate("App", { screen: "Breathe" })}>
-        <ButtonText>Breathe</ButtonText>
-      </Button>
+        <Button color="#1ABC9C" onPress={() => navigation.navigate("App", { screen: "Breathe" })}>
+          <ButtonText>Breathe</ButtonText>
+        </Button>
 
-      <Button color="#3498DB" onPress={() => navigation.navigate("App", { screen: "Relax" })}>
-        <ButtonText>Relax</ButtonText>
-      </Button>
+        <Button color="#3498DB" onPress={() => navigation.navigate("App", { screen: "Relax" })}>
+          <ButtonText>Relax</ButtonText>
+        </Button>
 
-      <Button color="#2C3E50" onPress={() => navigation.navigate("Sleep")}>
-        <ButtonText>Sleep</ButtonText>
-      </Button>
-    </Container>
+        <Button color="#9B59B6" onPress={() => navigation.navigate("App", { screen: "Meditate" })}>
+          <ButtonText>Meditate</ButtonText>
+        </Button>
+
+        <Button color="#E74C3C" onPress={() => navigation.navigate("App", { screen: "Sleep" })}>
+          <ButtonText>Sleep</ButtonText>
+        </Button>
+      </Container>
     </SafeArea>
   );
-}
+};

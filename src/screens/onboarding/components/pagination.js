@@ -5,17 +5,19 @@ import Animated, {
   interpolate,
   useAnimatedStyle,
 } from 'react-native-reanimated';
-import styled from 'styled-components/native';
+import styled from '@emotion/native';
+import { useTheme } from '@emotion/react';
 import { theme } from '../../../infrastructure/theme/theme.index';
 
 const Dot = styled(Animated.View)`
   height: 10px;
   border-radius: 5px;
-  background-color: ${theme.colors.primary};
+  background-color: ${props => props.theme.colors.primary};
   margin: 0 8px;
 `;
 
 export const Pagination = ({ data, x }) => {
+  const theme = useTheme();
   const { width: SCREEN_WIDTH } = useWindowDimensions();
 
   return (
@@ -50,5 +52,7 @@ export const Pagination = ({ data, x }) => {
 
 const Container = styled.View`
   flex-direction: row;
+  justify-content: center;
   align-items: center;
+  margin: 20px 0;
 `;

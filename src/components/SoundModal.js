@@ -1,6 +1,6 @@
 import React from 'react';
-import styled from 'styled-components/native';
-import { Modal, Animated, TouchableWithoutFeedback } from 'react-native';
+import styled from '@emotion/native';
+import { Modal, Animated, TouchableWithoutFeedback, Alert } from 'react-native';
 import { Ionicons } from "@expo/vector-icons";
 import { SoundMixer } from './SoundMixer';
 import { SOUNDSCAPES } from '../infrastructure/audio/soundscapes';

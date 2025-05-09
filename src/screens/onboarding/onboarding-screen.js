@@ -8,13 +8,15 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
 } from 'react-native-reanimated';
-import styled from 'styled-components/native';
+import styled from '@emotion/native';
+import { useTheme } from '@emotion/react';
 
 import { Pagination } from './components/pagination';
 import { theme } from '../../infrastructure/theme/theme.index';
 import { data } from './screen.data';
 
 const RenderItem = ({ item, index, x }) => {
+  const theme = useTheme();
   const { width: SCREEN_WIDTH } = useWindowDimensions();
 
   const imageAnimatedStyle = useAnimatedStyle(() => {
@@ -74,6 +76,7 @@ const RenderItem = ({ item, index, x }) => {
 };
 
 export function OnboardingScreen({ navigation }) {
+  const theme = useTheme();
   const { width: SCREEN_WIDTH } = useWindowDimensions();
   const flatListRef = useAnimatedRef();
 
@@ -157,19 +160,19 @@ export function OnboardingScreen({ navigation }) {
 
 const Container = styled.View`
   flex: 1;
-  background-color: ${theme.colors.background};
+  background-color: ${props => props.theme.colors.background};
 `;
 
 const ItemContainer = styled.View`
   flex: 1;
-  background-color: ${theme.colors.background};
+  background-color: ${props => props.theme.colors.background};
   align-items: center;
   justify-content: space-around;
-  width: ${(props) => props.screenWidth}px;
+  width: ${props => props.screenWidth}px;
 `;
 
 const ItemTitle = styled.Text`
-  color: ${theme.colors.textPrimary};
+  color: ${props => props.theme.colors.textPrimary};
   font-size: 22px;
   font-weight: bold;
   text-align: center;
@@ -177,7 +180,7 @@ const ItemTitle = styled.Text`
 `;
 
 const ItemText = styled.Text`
-  color: ${theme.colors.textPrimary};
+  color: ${props => props.theme.colors.textPrimary};
   text-align: center;
   line-height: 20px;
   margin: 0 30px;
@@ -201,14 +204,14 @@ const ButtonContainer = styled.View`
 `;
 
 const GetStartedButton = styled.TouchableOpacity`
-  background-color: ${theme.colors.primary};
+  background-color: ${props => props.theme.colors.primary};
   padding: 16px 32px;
   border-radius: 25px;
   margin-top: 20px;
 `;
 
 const ButtonText = styled.Text`
-  color: ${theme.colors.white};
+  color: ${props => props.theme.colors.white};
   font-size: 18px;
   font-weight: bold;
 `;
@@ -219,7 +222,7 @@ const SkipButton = styled.TouchableOpacity`
 `;
 
 const SkipText = styled.Text`
-  color: ${theme.colors.text};
+  color: ${props => props.theme.colors.text};
   font-size: 16px;
   opacity: 0.8;
 `;

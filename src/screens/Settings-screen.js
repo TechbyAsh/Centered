@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import styled from 'styled-components/native';
+import styled from '@emotion/native';
 import { ScrollView, TouchableOpacity, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme } from '@emotion/react';
 
 const Container = styled.View`
   flex: 1;
@@ -84,6 +85,7 @@ const SaveButtonText = styled.Text`
 `;
 
 export const SettingsScreen = ({ navigation }) => {
+  const theme = useTheme();
   const [wakeTime, setWakeTime] = useState(new Date().setHours(7, 0));
   const [workStartTime, setWorkStartTime] = useState(new Date().setHours(9, 0));
   const [lunchTime, setLunchTime] = useState(new Date().setHours(12, 30));

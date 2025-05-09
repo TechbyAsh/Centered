@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import styled from 'styled-components/native';
+import styled from '@emotion/native';
 import { View, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
@@ -11,7 +11,7 @@ const Container = styled.View`
 `;
 
 const CategoryTitle = styled.Text`
-  font-family: ${({ theme }) => theme.fonts.heading};
+  font-family: ${props => props.theme.fonts.heading};
   font-size: 18px;
   color: #00A896;
   margin: 10px 0;
@@ -22,7 +22,7 @@ const SoundButton = styled.TouchableOpacity`
   flex-direction: column;
   align-items: center;
   margin: 0 10px;
-  opacity: ${({ isPlaying }) => (isPlaying ? 1 : 0.6)};
+  opacity: ${props => props.isPlaying ? 1 : 0.6};
 `;
 
 const SoundName = styled.Text`

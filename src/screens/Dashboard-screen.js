@@ -1,8 +1,7 @@
 import React from 'react';
-import styled from 'styled-components/native';
-import { ScrollView, Dimensions, TouchableOpacity } from 'react-native';
+import styled from '@emotion/native';
+import { ScrollView, Dimensions, TouchableOpacity, View, Text } from 'react-native';
 import { Ionicons } from "@expo/vector-icons";
-import { LineChart } from 'react-native-chart-kit';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { RecommendedActivities } from '../components/RecommendedActivities';
 
@@ -125,8 +124,42 @@ const SessionDetails = styled.Text`
   margin-top: 3px;
 `;
 
+const SessionType = styled.Text`
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+`;
+
+const ChartContainer = styled.View`
+  height: 220px;
+  margin-vertical: 8px;
+  padding: 20px;
+  background-color: white;
+  border-radius: 16px;
+`;
+
+const ChartRow = styled.View`
+  flex-direction: row;
+  align-items: flex-end;
+  height: 140px;
+  justify-content: space-between;
+`;
+
+const Bar = styled.View`
+  width: 30px;
+  background-color: #00A896;
+  border-radius: 4px;
+  height: ${props => props.height}px;
+`;
+
+const DayLabel = styled.Text`
+  font-size: 12px;
+  color: #666;
+  margin-top: 8px;
+  text-align: center;
+`;
+
 export const DashboardScreen = ({ navigation }) => {
-  const screenWidth = Dimensions.get('window').width;
   const { 
     weeklyMinutes,
     sessionsCompleted,
@@ -135,6 +168,10 @@ export const DashboardScreen = ({ navigation }) => {
     recentSessions,
     refreshData
   } = useDashboardData();
+  const screenWidth = Dimensions.get('window').width;
+  const maxValue = Math.max(...chartData.datasets[0].data, 1);
+
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   return (
     <Container>
@@ -169,26 +206,16 @@ export const DashboardScreen = ({ navigation }) => {
         </StreakContainer>
 
         <SectionTitle>Weekly Progress</SectionTitle>
-        <LineChart
-          data={chartData}
-          width={screenWidth - 40}
-          height={220}
-          chartConfig={{
-            backgroundColor: '#ffffff',
-            backgroundGradientFrom: '#ffffff',
-            backgroundGradientTo: '#ffffff',
-            decimalPlaces: 0,
-            color: (opacity = 1) => `rgba(0, 168, 150, ${opacity})`,
-            style: {
-              borderRadius: 16,
-            },
-          }}
-          bezier
-          style={{
-            marginVertical: 8,
-            borderRadius: 16,
-          }}
-        />
+        <ChartContainer>
+          <ChartRow>
+            {chartData.datasets[0].data.map((value, index) => (
+              <View key={index} style={{ alignItems: 'center' }}>
+                <Bar style={{ height: Math.max((value / maxValue) * 140, 4) }} />
+                <DayLabel>{days[index]}</DayLabel>
+              </View>
+            ))}
+          </ChartRow>
+        </ChartContainer>
 
         <RecentSessionsContainer>
           <SectionTitle>Recent Sessions</SectionTitle>
@@ -196,7 +223,7 @@ export const DashboardScreen = ({ navigation }) => {
             <SessionCard key={session.id}>
               <Ionicons name={session.icon} size={24} color="#00A896" />
               <SessionInfo>
-                <SessionTitle>{session.type}</SessionTitle>
+                <SessionType>{session.type}</SessionType>
                 <SessionDetails>{session.duration} • {session.time}</SessionDetails>
               </SessionInfo>
             </SessionCard>

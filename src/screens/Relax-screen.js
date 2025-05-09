@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import styled from 'styled-components/native';
+import styled from '@emotion/native';
 import { View, TouchableOpacity, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
@@ -7,7 +7,7 @@ import { useDashboardData } from '../hooks/useDashboardData';
 
 const Container = styled.View`
   flex: 1;
-  background-color: ${({ theme }) => theme.colors.background};
+  background-color: ${props => props.theme.colors.background};
   padding: ${Platform.OS === 'ios' ? '50px 20px' : '20px'};
 `;
 
@@ -25,19 +25,19 @@ const HeaderContent = styled.View`
 const Title = styled.Text`
   font-size: 24px;
   font-weight: 600;
-  color: ${({ theme }) => theme.colors.text};
-  font-family: ${({ theme }) => theme.fonts.heading};
+  color: ${props => props.theme.colors.text};
+  font-family: ${props => props.theme.fonts.heading};
   margin-bottom: 8px;
 `;
 
 const SubTitle = styled.Text`
   font-size: 14px;
-  color: ${({ theme }) => theme.colors.textLight};
+  color: ${props => props.theme.colors.textLight};
   margin-bottom: 4px;
 `;
 
 const RelaxCard = styled(TouchableOpacity)`
-  background-color: ${({ theme }) => theme.colors.cardBackground};
+  background-color: ${props => props.theme.colors.cardBackground};
   border-radius: 16px;
   padding: 20px;
   margin-bottom: 16px;
@@ -51,23 +51,23 @@ const RelaxCard = styled(TouchableOpacity)`
 const RelaxTitle = styled.Text`
   font-size: 18px;
   font-weight: 500;
-  color: ${({ theme }) => theme.colors.text};
+  color: ${props => props.theme.colors.text};
   margin-bottom: 8px;
 `;
 
 const RelaxDescription = styled.Text`
   font-size: 14px;
-  color: ${({ theme }) => theme.colors.textLight};
+  color: ${props => props.theme.colors.textLight};
   margin-bottom: 12px;
 `;
 
 const RelaxDuration = styled.Text`
   font-size: 14px;
-  color: ${({ theme }) => theme.colors.primary};
+  color: ${props => props.theme.colors.primary};
 `;
 
 const PlayerContainer = styled.View`
-  background-color: ${({ theme }) => theme.colors.cardBackground};
+  background-color: ${props => props.theme.colors.cardBackground};
   border-radius: 16px;
   padding: 20px;
   margin-bottom: 20px;
@@ -86,14 +86,14 @@ const relaxSessions = [
     title: 'Deep Breathing',
     description: 'Calm your mind with deep breathing exercises',
     duration: 5,
-    audioFile: require('../../assets/sounds/rainSound.mp3'),
+    audioFile: require("../../assets/sounds/rainSound.mp3"),
   },
   {
     id: 2,
     title: 'Body Scan',
     description: 'Release tension with a guided body scan',
     duration: 10,
-    audioFile: require('../assets/meditations/BodyScanMeditation.mp4'),
+    audioFile: require("../../assets/meditations/BodyScanMeditation.mp4"),
   },
   {
     id: 3,
@@ -104,7 +104,7 @@ const relaxSessions = [
   },
 ];
 
-export const RelaxScreen = ({ navigation }) => {
+export const RelaxScreen = ({ navigation, theme }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [selectedSession, setSelectedSession] = useState(null);
   const sound = useRef(null);

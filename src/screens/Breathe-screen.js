@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import styled from 'styled-components/native';
+import styled from '@emotion/native';
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Animated, TouchableOpacity, ScrollView, Alert } from "react-native";
@@ -8,7 +8,6 @@ import { useBreathingAnimation } from '../infrastructure/breathing/useBreathingA
 import { useTimer } from '../infrastructure/hooks/useTimer';
 import { SoundModal } from '../components/SoundModal';
 import { useDashboardData } from '../hooks/useDashboardData';
-
 
 /* Styled Components */
 const Container = styled.View`
@@ -32,7 +31,7 @@ const InstructionText = styled.Text`
   text-align: left;
   align-self: flex-start;
   font-weight: 400;
-  font-family:  ${({ theme }) => theme.fonts.heading};
+  font-family: ${props => props.theme.fonts.heading};
 `;
 
 const AnimatedStartButton = styled(Animated.createAnimatedComponent(TouchableOpacity))`
@@ -63,7 +62,7 @@ const TimerContainer = styled.View`
 const CountdownText = styled.Text`
   font-size: 24px;
   color: #00A896;
-  font-family: ${({ theme }) => theme.fonts.heading};
+  font-family: ${props => props.theme.fonts.heading};
   margin-bottom: 10px;
 `;
 
@@ -113,7 +112,7 @@ const SoundButton = styled.TouchableOpacity`
 `;
 
 const TimerButton = styled.TouchableOpacity`
-  background-color: ${({ selected }) => (selected ? "#00A896" : "#FFFFFF")};
+  background-color: ${props => props.selected ? "#00A896" : "#FFFFFF"};
   padding: 10px 20px;
   margin: 0 10px;
   border-radius: 20px;
@@ -122,12 +121,12 @@ const TimerButton = styled.TouchableOpacity`
 
 const TimerText = styled.Text`
   font-size: 16px;
-  color: ${({ selected }) => (selected ? "white" : "#00A896")};
+  color: ${props => props.selected ? "white" : "#00A896"};
   font-weight: 600;
 `;
 
 const PatternButton = styled.TouchableOpacity`
-  background-color: ${({ selected }) => (selected ? '#00A896' : '#FFFFFF')};
+  background-color: ${props => props.selected ? '#00A896' : '#FFFFFF'};
   padding: 15px;
   margin: 10px;
   border-radius: 15px;
@@ -137,14 +136,14 @@ const PatternButton = styled.TouchableOpacity`
 
 const PatternText = styled.Text`
   font-size: 16px;
-  color: ${({ selected }) => (selected ? 'white' : '#00A896')};
+  color: ${props => props.selected ? 'white' : '#00A896'};
   font-weight: 600;
   text-align: center;
 `;
 
 const PatternDescription = styled.Text`
   font-size: 14px;
-  color: ${({ selected }) => (selected ? '#E6F7F5' : '#666')};
+  color: ${props => props.selected ? '#E6F7F5' : '#666'};
   text-align: center;
   margin-top: 5px;
 `;
