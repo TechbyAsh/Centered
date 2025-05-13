@@ -9,6 +9,7 @@ import { MeditationScreen } from '../../screens/Meditation-screen';
 import { RitualsScreen } from '../../screens/Rituals-screen';
 import { RitualSessionScreen } from '../../screens/RitualSession-screen';
 import { SettingsScreen } from '../../screens/Settings-screen';
+import { TransitionsScreen } from '../../screens/transitions/Transitions-screen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -89,6 +90,15 @@ export const AppNavigator = () => {
       <Tab.Screen name="Relax" component={RelaxStack} />
       <Tab.Screen name="Meditate" component={MeditationStack} />
       <Tab.Screen name="Rituals" component={RitualsStack} />
+      <Tab.Screen 
+        name="Transitions" 
+        component={TransitionsScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="timer-outline" size={size} color={color} />
+          ),
+        }}
+      />
     </Tab.Navigator>
   );
 };
