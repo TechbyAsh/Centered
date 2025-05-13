@@ -8,6 +8,7 @@ import { Audio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { storage } from '../../infrastructure/storage/storage';
 import { calendarService } from '../../services/calendar';
+import { statistics } from '../../services/statistics';
 
 const AnimatedCircle = Animated.createAnimatedComponent(SvgCircle);
 
@@ -332,8 +333,18 @@ export const TransitionTimer = ({
   };
 
   const handleComplete = async () => {
-    // Add transition to calendar
     const startTime = new Date(Date.now() - timeElapsed * 1000); // Calculate when the transition started
+    
+    // Record statistics
+    await statistics.recordTransition({
+      type,
+      startTime,
+      duration,
+      completed: true,
+      skipped: false,
+    });
+
+    // Add transition to calendar
     await calendarService.addTransitionToCalendar(type, startTime, duration);
     setIsActive(false);
     
