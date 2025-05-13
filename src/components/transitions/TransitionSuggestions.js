@@ -1,5 +1,6 @@
 import React, { useCallback } from 'react';
 import styled from '@emotion/native';
+import { Alert } from 'react-native';
 import { useTransitionSuggestions } from '../../hooks/useTransitionSuggestions';
 import { useTheme } from '@emotion/react';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,6 +17,8 @@ const Title = styled.Text`
 `;
 
 const SuggestionCard = styled.TouchableOpacity`
+  background-color: ${props => props.hasConflict ? '#FFF3F3' : '#FFFFFF'};
+  border-color: ${props => props.hasConflict ? '#FFD6D6' : '#E5E5E5'};
   background-color: ${props => props.theme.colors.card};
   border-radius: 12px;
   padding: 16px;
@@ -36,6 +39,7 @@ const SuggestionTime = styled.Text`
 `;
 
 const SuggestionMessage = styled.Text`
+  color: ${props => props.hasConflict ? '#FF4D4D' : '#333333'};
   font-size: 16px;
   color: ${props => props.theme.colors.text};
 `;
@@ -49,6 +53,44 @@ const IconContainer = styled.View`
   justify-content: center;
   margin-left: 12px;
 `;
+
+const ConflictBadge = styled.View`
+  background-color: #FFE5E5;
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-top: 4px;
+`;
+
+const ConflictText = styled.Text`
+  color: #FF4D4D;
+  font-size: 12px;
+`;
+
+const AlternativeTimesContainer = styled.View`
+  margin-top: 8px;
+  flex-direction: row;
+  flex-wrap: wrap;
+`;
+
+const AlternativeTimeButton = styled.TouchableOpacity`
+  background-color: #F5F5F5;
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-right: 8px;
+  margin-bottom: 4px;
+`;
+
+const AlternativeTimeText = styled.Text`
+  color: #666666;
+  font-size: 12px;
+`;
+
+const formatAlternativeTime = (offset) => {
+  if (offset < 0) {
+    return `${Math.abs(offset)}m earlier`;
+  }
+  return `${offset}m later`;
+};
 
 export const TransitionSuggestions = ({ onSelectTransition }) => {
   const theme = useTheme();
@@ -77,6 +119,31 @@ export const TransitionSuggestions = ({ onSelectTransition }) => {
     }
   }, []);
 
+  const handleSuggestionPress = (suggestion) => {
+    if (suggestion.conflict) {
+      Alert.alert(
+        'Schedule Conflict',
+        `${suggestion.conflict.message}. Would you like to choose an alternative time?`,
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+          {
+            text: 'Show Alternatives',
+            onPress: () => {}, // Alternatives are already visible
+          },
+        ]
+      );
+    } else {
+      onSelectTransition(suggestion.type);
+    }
+  };
+
+  const handleAlternativePress = (suggestion, alternativeTime) => {
+    onSelectTransition(suggestion.type, alternativeTime);
+  };
+
   if (suggestions.length === 0) {
     return null;
   }
@@ -84,15 +151,40 @@ export const TransitionSuggestions = ({ onSelectTransition }) => {
   return (
     <Container>
       <Title>Suggested Transitions</Title>
-      {suggestions.map((suggestion, index) => (
+      {suggestions.map((suggestion) => (
         <SuggestionCard
-          key={index}
-          onPress={() => onSelectTransition(suggestion.type)}
-          activeOpacity={0.7}
+          key={`${suggestion.type}-${suggestion.time.getTime()}`}
+          onPress={() => handleSuggestionPress(suggestion)}
+          hasConflict={!!suggestion.conflict}
         >
           <SuggestionInfo>
             <SuggestionTime>{formatTime(suggestion.time)}</SuggestionTime>
-            <SuggestionMessage>{suggestion.message}</SuggestionMessage>
+            <SuggestionMessage hasConflict={!!suggestion.conflict}>
+              {suggestion.message}
+            </SuggestionMessage>
+
+            {suggestion.conflict && (
+              <>
+                <ConflictBadge>
+                  <ConflictText>{suggestion.conflict.message}</ConflictText>
+                </ConflictBadge>
+
+                {suggestion.alternatives && suggestion.alternatives.length > 0 && (
+                  <AlternativeTimesContainer>
+                    {suggestion.alternatives.map((alt, index) => (
+                      <AlternativeTimeButton
+                        key={index}
+                        onPress={() => handleAlternativePress(suggestion, alt.time)}
+                      >
+                        <AlternativeTimeText>
+                          {formatAlternativeTime(alt.offset)}
+                        </AlternativeTimeText>
+                      </AlternativeTimeButton>
+                    ))}
+                  </AlternativeTimesContainer>
+                )}
+              </>
+            )}
           </SuggestionInfo>
           <IconContainer>
             <Ionicons

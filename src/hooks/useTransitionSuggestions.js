@@ -1,29 +1,55 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { storage } from '../infrastructure/storage/storage';
+import { notificationService } from '../services/notifications';
+import { conflictDetection } from '../services/conflict-detection';
 
 const TRANSITION_BUFFER = 5 * 60 * 1000; // 5 minutes in milliseconds
 
 export const useTransitionSuggestions = () => {
   const [schedule, setSchedule] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
+  const [settings, setSettings] = useState(null);
 
   useEffect(() => {
-    loadSchedule();
+    loadScheduleAndSettings();
+    initServices();
   }, []);
 
-  const loadSchedule = async () => {
+  const loadScheduleAndSettings = async () => {
     try {
       const prefs = await storage.getPreferences();
       if (prefs?.schedule) {
         setSchedule(prefs.schedule);
-        generateSuggestions(prefs.schedule);
+        setSettings(prefs.transitionSettings);
+        generateSuggestions(prefs.schedule, prefs.transitionSettings);
       }
     } catch (error) {
       console.error('Error loading schedule:', error);
     }
   };
 
-  const generateSuggestions = (schedule) => {
+  const initServices = useCallback(async () => {
+    await Promise.all([
+      notificationService.init(),
+      conflictDetection.init()
+    ]);
+  }, []);
+
+  const scheduleNotifications = useCallback(async (suggestions, settings) => {
+    // Cancel existing notifications first
+    await notificationService.cancelAllNotifications();
+
+    // Schedule new notifications
+    for (const suggestion of suggestions) {
+      await notificationService.scheduleTransitionReminder(
+        suggestion.type,
+        suggestion.time,
+        settings
+      );
+    }
+  }, []);
+
+  const generateSuggestions = (schedule, settings) => {
     const now = new Date();
     const suggestions = [];
 
@@ -94,24 +120,46 @@ export const useTransitionSuggestions = () => {
       });
     }
 
-    // Filter out past suggestions and sort by time
+    // Filter out suggestions that are too close to now or have conflicts
     const validSuggestions = suggestions
-      .filter(s => s.time > now)
+      .filter(suggestion => {
+        // Check if it's in the future
+        if (suggestion.time <= now) return false;
+
+        // Check for conflicts
+        const endTime = new Date(suggestion.time.getTime() + (suggestion.duration || 300) * 1000);
+        const conflict = conflictDetection.hasConflict(suggestion.time, endTime, suggestion.type);
+
+        if (conflict) {
+          // Store conflict information
+          suggestion.conflict = conflict;
+          // Get alternative times
+          suggestion.alternatives = conflictDetection.suggestAlternativeTime(suggestion.time, suggestion.type);
+          return false;
+        }
+
+        return true;
+      })
       .sort((a, b) => a.time - b.time);
 
     setSuggestions(validSuggestions);
+    
+    // Schedule notifications for the valid suggestions
+    if (settings?.notifications?.enabled !== false) {
+      scheduleNotifications(validSuggestions, settings);
+    }
   };
 
   // Refresh suggestions every minute
   useEffect(() => {
-    if (schedule) {
+    if (schedule && settings) {
       const interval = setInterval(() => {
-        generateSuggestions(schedule);
+        generateSuggestions(schedule, settings);
       }, 60 * 1000);
 
       return () => clearInterval(interval);
     }
-  }, [schedule]);
+  }, [schedule, settings]);
 
   return {
     suggestions,

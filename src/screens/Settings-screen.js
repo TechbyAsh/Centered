@@ -7,6 +7,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '@emotion/react';
 import { storage } from '../infrastructure/storage/storage';
+import { calendarService } from '../services/calendar';
 
 const Container = styled.View`
   flex: 1;
@@ -111,6 +112,27 @@ const MinutesText = styled.Text`
   width: 30px;
 `;
 
+const CalendarLabel = styled.View`
+  flex-direction: row;
+  align-items: center;
+  flex: 1;
+`;
+
+const CalendarIcon = styled.View`
+  width: 12px;
+  height: 12px;
+  border-radius: 6px;
+  background-color: ${props => props.color};
+  margin-right: 8px;
+`;
+
+const SettingDescription = styled.Text`
+  font-size: 14px;
+  color: ${props => props.theme.colors.textLight};
+  margin-top: 10px;
+  font-style: italic;
+`;
+
 import { Picker } from '@react-native-picker/picker';
 
 const PickerContainer = styled.View`
@@ -137,6 +159,9 @@ export const SettingsScreen = ({ navigation }) => {
   const [currentPicker, setCurrentPicker] = useState(null);
 
   // Transition Timer Settings
+  const [calendars, setCalendars] = useState([]);
+  const [selectedCalendarIds, setSelectedCalendarIds] = useState([]);
+
   const [transitionSettings, setTransitionSettings] = useState({
     durations: {
       'work-to-break': 300, // 5 minutes
@@ -151,14 +176,51 @@ export const SettingsScreen = ({ navigation }) => {
     },
     haptics: true,
     theme: 'calm', // calm, focus, energize
+    notifications: {
+      enabled: true,
+      remindBefore: 5, // minutes
+      sound: true,
+      vibrate: true,
+    },
   });
 
   useEffect(() => {
-    Promise.all([
-      loadSchedule(),
-      loadTransitionSettings()
-    ]);
+    initializeSettings();
   }, []);
+
+  const initializeSettings = async () => {
+    await Promise.all([
+      loadSettings(),
+      initCalendar()
+    ]);
+  };
+
+  const loadSettings = async () => {
+    try {
+      const prefs = await storage.getPreferences();
+      if (prefs?.schedule) {
+        const { wakeTime, workStartTime, workEndTime, sleepTime } = prefs.schedule;
+        setWakeTime(wakeTime);
+        setWorkStartTime(workStartTime);
+        setWorkEndTime(workEndTime);
+        setSleepTime(sleepTime);
+      }
+
+      if (prefs?.transitionSettings) {
+        setTransitionSettings(prefs.transitionSettings);
+      }
+    } catch (error) {
+      console.error('Error loading settings:', error);
+    }
+  };
+
+  const initCalendar = async () => {
+    const initialized = await calendarService.init();
+    if (initialized) {
+      setCalendars(calendarService.getCalendars());
+      setSelectedCalendarIds(calendarService.getSelectedCalendarIds());
+    }
+  };
 
   const loadSchedule = async () => {
     try {
@@ -390,6 +452,94 @@ export const SettingsScreen = ({ navigation }) => {
           </SettingRow>
 
           {/* Theme Selection */}
+          {/* Notification Settings */}
+          <SectionTitle>Notifications</SectionTitle>
+          <SettingRow>
+            <SettingLabel>Enable Notifications</SettingLabel>
+            <Switch
+              value={transitionSettings.notifications.enabled}
+              onValueChange={(value) => {
+                setTransitionSettings(prev => ({
+                  ...prev,
+                  notifications: { ...prev.notifications, enabled: value }
+                }));
+              }}
+            />
+          </SettingRow>
+
+          {transitionSettings.notifications.enabled && (
+            <>
+              <SettingRow>
+                <SettingLabel>Remind Before (minutes)</SettingLabel>
+                <DurationInput
+                  keyboardType="numeric"
+                  value={transitionSettings.notifications.remindBefore.toString()}
+                  onChangeText={(value) => {
+                    const minutes = parseInt(value) || 5;
+                    setTransitionSettings(prev => ({
+                      ...prev,
+                      notifications: { ...prev.notifications, remindBefore: minutes }
+                    }));
+                  }}
+                />
+              </SettingRow>
+
+              <SettingRow>
+                <SettingLabel>Notification Sound</SettingLabel>
+                <Switch
+                  value={transitionSettings.notifications.sound}
+                  onValueChange={(value) => {
+                    setTransitionSettings(prev => ({
+                      ...prev,
+                      notifications: { ...prev.notifications, sound: value }
+                    }));
+                  }}
+                />
+              </SettingRow>
+
+              <SettingRow>
+                <SettingLabel>Vibration</SettingLabel>
+                <Switch
+                  value={transitionSettings.notifications.vibrate}
+                  onValueChange={(value) => {
+                    setTransitionSettings(prev => ({
+                      ...prev,
+                      notifications: { ...prev.notifications, vibrate: value }
+                    }));
+                  }}
+                />
+              </SettingRow>
+            </>
+          )}
+
+          {/* Calendar Sync */}
+          <SectionTitle>Calendar Sync</SectionTitle>
+          <SettingDescription>
+            Select calendars to sync with your transitions. This helps prevent conflicts with meetings and events.
+          </SettingDescription>
+
+          {calendars.map(calendar => (
+            <SettingRow key={calendar.id}>
+              <CalendarLabel>
+                <CalendarIcon color={calendar.color} />
+                <SettingLabel>{calendar.title}</SettingLabel>
+              </CalendarLabel>
+              <Switch
+                value={selectedCalendarIds.includes(calendar.id)}
+                onValueChange={(value) => {
+                  const newSelection = value
+                    ? [...selectedCalendarIds, calendar.id]
+                    : selectedCalendarIds.filter(id => id !== calendar.id);
+                  
+                  setSelectedCalendarIds(newSelection);
+                  calendarService.updateCalendarSelections(newSelection);
+                }}
+              />
+            </SettingRow>
+          ))}
+
+          {/* Theme Selection */}
+          <SectionTitle>Theme</SectionTitle>
           <SettingRow>
             <SettingLabel>Theme</SettingLabel>
             <PickerContainer>
