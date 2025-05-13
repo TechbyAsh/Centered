@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import styled from '@emotion/native';
 import { useTheme } from '@emotion/react';
 import { ScrollView } from 'react-native';
 import { TransitionTimer } from '../../components/transitions/TransitionTimer';
+import { TransitionSuggestions } from '../../components/transitions/TransitionSuggestions';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const Container = styled(SafeAreaView)`
@@ -50,60 +51,73 @@ const TransitionTypeText = styled.Text`
 
 const transitionTypes = [
   { id: 'work-to-break', label: 'Work to Break', duration: 300 },
-  { id: 'break-to-work', label: 'Break to Work', duration: 180 },
+  { id: 'break-to-work', label: 'Back to Work', duration: 180 },
   { id: 'morning-start', label: 'Morning Start', duration: 420 },
   { id: 'evening-wind-down', label: 'Evening Wind Down', duration: 600 },
 ];
 
 export const TransitionsScreen = () => {
   const theme = useTheme();
-  const [selectedType, setSelectedType] = useState(transitionTypes[0]);
+  const [selectedType, setSelectedType] = useState('work-to-break');
+  const [showTimer, setShowTimer] = useState(false);
+
+  const handleSuggestionSelect = useCallback((type) => {
+    setSelectedType(type);
+    setShowTimer(true);
+  }, []);
 
   const handleComplete = () => {
-    // TODO: Save transition completion to storage
-    console.log('Transition completed');
+    setShowTimer(false);
   };
 
   const handleSkip = () => {
-    // TODO: Track skipped transitions
-    console.log('Transition skipped');
+    setShowTimer(false);
   };
+
+  const selectedTransition = transitionTypes.find(t => t.id === selectedType);
 
   return (
     <Container>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <Header>
-          <Title>Mindful Transitions</Title>
-          <Subtitle>Take a moment to pause and reset</Subtitle>
-        </Header>
-
-        <TransitionTypeContainer>
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 20 }}
-          >
-            {transitionTypes.map(type => (
-              <TransitionTypeButton
-                key={type.id}
-                selected={selectedType.id === type.id}
-                onPress={() => setSelectedType(type)}
-              >
-                <TransitionTypeText selected={selectedType.id === type.id}>
-                  {type.label}
-                </TransitionTypeText>
-              </TransitionTypeButton>
-            ))}
-          </ScrollView>
-        </TransitionTypeContainer>
-
+      {showTimer ? (
         <TransitionTimer
-          type={selectedType.id}
-          duration={selectedType.duration}
+          type={selectedType}
+          duration={selectedTransition?.duration}
           onComplete={handleComplete}
           onSkip={handleSkip}
         />
-      </ScrollView>
+      ) : (
+        <ScrollView showsVerticalScrollIndicator={false}>
+          <Header>
+            <Title>Mindful Transitions</Title>
+            <Subtitle>Take a moment to pause and reset</Subtitle>
+          </Header>
+
+          <TransitionTypeContainer>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 20 }}
+            >
+              {transitionTypes.map(type => (
+                <TransitionTypeButton
+                  key={type.id}
+                  selected={selectedType === type.id}
+                  onPress={() => {
+                    setSelectedType(type.id);
+                    setShowTimer(true);
+                  }}
+                >
+                  <TransitionTypeText selected={selectedType === type.id}>
+                    {type.label}
+                  </TransitionTypeText>
+                </TransitionTypeButton>
+              ))}
+            </ScrollView>
+          </TransitionTypeContainer>
+
+          <TransitionSuggestions onSelectTransition={handleSuggestionSelect} />
+        </ScrollView>
+      )}
     </Container>
   );
 };
