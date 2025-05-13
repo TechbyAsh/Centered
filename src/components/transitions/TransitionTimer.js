@@ -1,24 +1,35 @@
 import React, { useState, useEffect, useRef } from 'react';
+import Svg, { Circle as SvgCircle } from 'react-native-svg';
 import styled from '@emotion/native';
 import { useTheme } from '@emotion/react';
 import { Animated, Easing } from 'react-native';
+const AnimatedCircle = Animated.createAnimatedComponent(SvgCircle);
 import { Ionicons } from '@expo/vector-icons';
 
 const Container = styled.View`
+  flex: 1;
   align-items: center;
-  justify-content: center;
-  padding: 20px;
+  padding: 40px 20px;
+  justify-content: space-between;
 `;
 
-const ProgressCircle = styled(Animated.View)`
-  width: 220px;
-  height: 220px;
-  border-radius: 110px;
-  border-width: 10px;
-  border-color: ${({ theme }) => `${theme.colors.primary}20`};
+const CIRCLE_SIZE = 220;
+const CIRCLE_STROKE_WIDTH = 10;
+const CIRCLE_RADIUS = CIRCLE_SIZE / 2;
+const CIRCLE_CIRCUMFERENCE = 2 * Math.PI * (CIRCLE_RADIUS - CIRCLE_STROKE_WIDTH);
+
+const CircleContainer = styled.View`
+  width: ${CIRCLE_SIZE}px;
+  height: ${CIRCLE_SIZE}px;
+  position: relative;
   align-items: center;
   justify-content: center;
-  position: relative;
+`;
+
+const Circle = styled.View`
+  width: ${CIRCLE_SIZE}px;
+  height: ${CIRCLE_SIZE}px;
+  position: absolute;
 `;
 
 const TimerContainer = styled.View`
@@ -42,9 +53,9 @@ const PhaseText = styled.Text`
 const ButtonContainer = styled.View`
   flex-direction: row;
   justify-content: center;
-  align-items: center;
-  margin-top: 30px;
   gap: 16px;
+  margin-top: auto;
+  padding-bottom: 20px;
 `;
 
 const Button = styled.TouchableOpacity`
@@ -70,6 +81,35 @@ const formatTime = (seconds) => {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
+const usePulseAnimation = () => {
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.05,
+          duration: 1000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+
+    return () => {
+      pulseAnim.stopAnimation();
+    };
+  }, []);
+
+  return pulseAnim;
+};
+
 export const TransitionTimer = ({
   duration = 300, // 5 minutes default
   onComplete,
@@ -81,31 +121,64 @@ export const TransitionTimer = ({
   const [isActive, setIsActive] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const progressAnimation = useRef(new Animated.Value(0)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const glowAnim = useRef(new Animated.Value(0.3)).current;
   const timerRef = useRef(null);
 
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-    };
-  }, []);
+  const startPulseAnimation = () => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.parallel([
+          Animated.timing(pulseAnim, {
+            toValue: 1.05,
+            duration: 1000,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(glowAnim, {
+            toValue: 0.6,
+            duration: 1000,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.parallel([
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 1000,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(glowAnim, {
+            toValue: 0.3,
+            duration: 1000,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ]),
+      ])
+    ).start();
+  };
 
-  const startTimer = () => {
-    setIsActive(true);
-    setIsPaused(false);
-    
+  useEffect(() => {
+    if (!isActive) {
+      pulseAnim.stopAnimation();
+      glowAnim.stopAnimation();
+      return;
+    }
+
     timerRef.current = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
+      setTimeLeft(prevTime => {
+        if (prevTime <= 1) {
           clearInterval(timerRef.current);
-          setIsActive(false);
           onComplete?.();
           return 0;
         }
-        return prev - 1;
+        return prevTime - 1;
       });
     }, 1000);
+
+    progressAnimation.setValue(0);
 
     Animated.timing(progressAnimation, {
       toValue: 1,
@@ -113,16 +186,37 @@ export const TransitionTimer = ({
       easing: Easing.linear,
       useNativeDriver: true,
     }).start();
+
+    startPulseAnimation();
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, [isActive]);
+
+  const startTimer = () => {
+    setTimeLeft(duration);
+    setIsActive(true);
+    setIsPaused(false);
   };
 
   const pauseTimer = () => {
     setIsPaused(true);
-    clearInterval(timerRef.current);
+    setIsActive(false);
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+    pulseAnim.stopAnimation();
+    glowAnim.stopAnimation();
     progressAnimation.stopAnimation();
   };
 
   const resumeTimer = () => {
     setIsPaused(false);
+    setIsActive(true);
+    startPulseAnimation();
     startTimer();
   };
 
@@ -149,19 +243,58 @@ export const TransitionTimer = ({
     }
   };
 
-  const spin = progressAnimation.interpolate({
+
+
+  // Calculate the initial rotation based on any existing progress
+  const startRotation = -135 + (((duration - timeLeft) / duration) * 360);
+
+  const rotateInterpolation = progressAnimation.interpolate({
     inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
+    outputRange: [`${startRotation}deg`, '360deg'],
+  });
+
+  const opacityInterpolation = progressAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.6, 1],
   });
 
   return (
     <Container>
-      <ProgressCircle as={Animated.View} style={{ transform: [{ rotate: spin }] }}>
+      <CircleContainer>
+        <Animated.View style={{
+          transform: [{ scale: isActive ? pulseAnim : 1 }]
+        }}>
+          <Svg width={CIRCLE_SIZE} height={CIRCLE_SIZE}>
+            <SvgCircle
+              cx={CIRCLE_RADIUS}
+              cy={CIRCLE_RADIUS}
+              r={CIRCLE_RADIUS - CIRCLE_STROKE_WIDTH}
+              stroke={`${theme.colors.primary}20`}
+              strokeWidth={CIRCLE_STROKE_WIDTH}
+              fill="none"
+            />
+            <AnimatedCircle
+              cx={CIRCLE_RADIUS}
+              cy={CIRCLE_RADIUS}
+              r={CIRCLE_RADIUS - CIRCLE_STROKE_WIDTH}
+              stroke={theme.colors.primary}
+              strokeWidth={CIRCLE_STROKE_WIDTH}
+              fill="none"
+              strokeDasharray={CIRCLE_CIRCUMFERENCE}
+              strokeDashoffset={progressAnimation.interpolate({
+                inputRange: [0, 1],
+                outputRange: [CIRCLE_CIRCUMFERENCE, 0],
+              })}
+              strokeLinecap="round"
+              opacity={isActive ? glowAnim : 1}
+            />
+          </Svg>
+        </Animated.View>
         <TimerContainer>
           <TimerText>{formatTime(timeLeft)}</TimerText>
           <PhaseText>{getPhaseText()}</PhaseText>
         </TimerContainer>
-      </ProgressCircle>
+      </CircleContainer>
 
       <ButtonContainer>
         {!isActive ? (
