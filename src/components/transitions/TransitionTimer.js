@@ -3,8 +3,12 @@ import Svg, { Circle as SvgCircle } from 'react-native-svg';
 import styled from '@emotion/native';
 import { useTheme } from '@emotion/react';
 import { Animated, Easing } from 'react-native';
-const AnimatedCircle = Animated.createAnimatedComponent(SvgCircle);
 import { Ionicons } from '@expo/vector-icons';
+import { Audio } from 'expo-av';
+import * as Haptics from 'expo-haptics';
+import { storage } from '../../infrastructure/storage/storage';
+
+const AnimatedCircle = Animated.createAnimatedComponent(SvgCircle);
 
 const Container = styled.View`
   flex: 1;
@@ -18,12 +22,39 @@ const CIRCLE_STROKE_WIDTH = 10;
 const CIRCLE_RADIUS = CIRCLE_SIZE / 2;
 const CIRCLE_CIRCUMFERENCE = 2 * Math.PI * (CIRCLE_RADIUS - CIRCLE_STROKE_WIDTH);
 
+const getThemeColors = (theme, themeType) => {
+  const themeMap = {
+    calm: {
+      primary: theme.colors.teal,
+      secondary: theme.colors.blue,
+      background: theme.colors.background,
+      text: theme.colors.text,
+    },
+    focus: {
+      primary: theme.colors.purple,
+      secondary: theme.colors.indigo,
+      background: theme.colors.darkBackground,
+      text: theme.colors.lightText,
+    },
+    energize: {
+      primary: theme.colors.orange,
+      secondary: theme.colors.yellow,
+      background: theme.colors.warmBackground,
+      text: theme.colors.darkText,
+    },
+  };
+
+  return themeMap[themeType] || themeMap.calm;
+};
+
 const CircleContainer = styled.View`
   width: ${CIRCLE_SIZE}px;
   height: ${CIRCLE_SIZE}px;
   position: relative;
   align-items: center;
   justify-content: center;
+  background-color: ${({ theme, themeType }) => getThemeColors(theme, themeType).background};
+  border-radius: ${CIRCLE_SIZE / 2}px;
 `;
 
 const Circle = styled.View`
@@ -40,13 +71,14 @@ const TimerContainer = styled.View`
 const TimerText = styled.Text`
   font-size: 48px;
   font-weight: 600;
-  color: ${({ theme }) => theme.colors.text};
+  color: ${({ theme, themeType }) => getThemeColors(theme, themeType).text};
   font-family: ${props => props.theme.fonts.heading};
 `;
 
 const PhaseText = styled.Text`
   font-size: 18px;
-  color: ${({ theme }) => theme.colors.textLight};
+  color: ${({ theme, themeType }) => getThemeColors(theme, themeType).text};
+  opacity: 0.7;
   margin-top: 8px;
 `;
 
@@ -111,11 +143,81 @@ const usePulseAnimation = () => {
 };
 
 export const TransitionTimer = ({
-  duration = 300, // 5 minutes default
+  duration: defaultDuration = 300,
   onComplete,
   onSkip,
   type = 'work-to-break',
 }) => {
+  const [settings, setSettings] = useState({
+    durations: {
+      'work-to-break': 300,
+      'break-to-work': 180,
+      'morning-start': 600,
+      'evening-wind-down': 900,
+    },
+    audio: {
+      enabled: true,
+      volume: 0.7,
+      soundType: 'bells',
+    },
+    haptics: true,
+    theme: 'calm',
+  });
+
+  const [sound, setSound] = useState();
+  const duration = settings.durations[type] || defaultDuration;
+
+  useEffect(() => {
+    loadSettings();
+    return () => {
+      if (sound) {
+        sound.unloadAsync();
+      }
+    };
+  }, []);
+
+  const loadSettings = async () => {
+    try {
+      const prefs = await storage.getPreferences();
+      if (prefs?.transitionSettings) {
+        setSettings(prefs.transitionSettings);
+      }
+    } catch (error) {
+      console.error('Error loading transition settings:', error);
+    }
+  };
+
+  const playSound = async () => {
+    if (!settings.audio.enabled) return;
+
+    try {
+      if (sound) {
+        await sound.unloadAsync();
+      }
+
+      const soundMap = {
+        bells: require('../../assets/sounds/bells.mp3'),
+        nature: require('../../assets/sounds/nature.mp3'),
+        ocean: require('../../assets/sounds/ocean.mp3'),
+      };
+
+      const { sound: newSound } = await Audio.Sound.createAsync(soundMap[settings.audio.soundType], {
+        volume: settings.audio.volume,
+        isLooping: false,
+      });
+
+      setSound(newSound);
+      await newSound.playAsync();
+    } catch (error) {
+      console.error('Error playing sound:', error);
+    }
+  };
+
+  const triggerHaptics = () => {
+    if (settings.haptics) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+  };
   const theme = useTheme();
   const [timeLeft, setTimeLeft] = useState(duration);
   const [isActive, setIsActive] = useState(false);
@@ -228,6 +330,59 @@ export const TransitionTimer = ({
     onSkip?.();
   };
 
+  const handleComplete = async () => {
+    setIsActive(false);
+    
+    if (settings.audio.enabled) {
+      await playSound();
+    }
+    
+    if (settings.haptics) {
+      triggerHaptics();
+    }
+
+    // Save the completed transition
+    const session = {
+      id: Date.now().toString(),
+      type: 'transition',
+      subType: type,
+      duration: Math.round((duration - timeLeft) / 60), // Convert to minutes
+      date: new Date().toISOString()
+    };
+
+    await storage.saveSession(session);
+
+    // Update weekly stats
+    const stats = await storage.getWeeklyStats();
+    const updatedStats = {
+      ...stats,
+      totalMinutes: (stats.totalMinutes || 0) + session.duration,
+      sessionsCompleted: (stats.sessionsCompleted || 0) + 1,
+      weeklyData: stats.weeklyData || Array(7).fill(0)
+    };
+    
+    // Update today's minutes in weeklyData
+    const today = new Date().getDay();
+    updatedStats.weeklyData[today] += session.duration;
+
+    await storage.updateWeeklyStats(updatedStats);
+
+    // Update streak
+    const streakData = await storage.getStreak();
+    const lastSessionDate = new Date(streakData.lastSessionDate || 0);
+    const currentDate = new Date();
+    const isConsecutiveDay = 
+      lastSessionDate.toDateString() === currentDate.toDateString() ||
+      lastSessionDate.toDateString() === new Date(currentDate.setDate(currentDate.getDate() - 1)).toDateString();
+
+    await storage.updateStreak({
+      current: isConsecutiveDay ? (streakData.current || 0) + 1 : 1,
+      lastSessionDate: new Date().toISOString()
+    });
+
+    onComplete?.();
+  };
+
   const getPhaseText = () => {
     switch (type) {
       case 'work-to-break':
@@ -258,9 +413,11 @@ export const TransitionTimer = ({
     outputRange: [0.6, 1],
   });
 
+  const themeColors = getThemeColors(theme, settings.theme);
+
   return (
-    <Container>
-      <CircleContainer>
+    <Container style={{ backgroundColor: themeColors.background }}>
+      <CircleContainer themeType={settings.theme}>
         <Animated.View style={{
           transform: [{ scale: isActive ? pulseAnim : 1 }]
         }}>
@@ -277,7 +434,7 @@ export const TransitionTimer = ({
               cx={CIRCLE_RADIUS}
               cy={CIRCLE_RADIUS}
               r={CIRCLE_RADIUS - CIRCLE_STROKE_WIDTH}
-              stroke={theme.colors.primary}
+              stroke={themeColors.secondary}
               strokeWidth={CIRCLE_STROKE_WIDTH}
               fill="none"
               strokeDasharray={CIRCLE_CIRCUMFERENCE}
@@ -291,8 +448,8 @@ export const TransitionTimer = ({
           </Svg>
         </Animated.View>
         <TimerContainer>
-          <TimerText>{formatTime(timeLeft)}</TimerText>
-          <PhaseText>{getPhaseText()}</PhaseText>
+          <TimerText themeType={settings.theme}>{formatTime(timeLeft)}</TimerText>
+          <PhaseText themeType={settings.theme}>{getPhaseText()}</PhaseText>
         </TimerContainer>
       </CircleContainer>
 

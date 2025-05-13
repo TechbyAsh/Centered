@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import styled from '@emotion/native';
-import { ScrollView, TouchableOpacity, Platform } from 'react-native';
+import { ScrollView, TouchableOpacity, Platform, Switch, View, Text } from 'react-native';
+import Slider from '@react-native-community/slider';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '@emotion/react';
+import { storage } from '../infrastructure/storage/storage';
 
 const Container = styled.View`
   flex: 1;
@@ -78,6 +80,46 @@ const SaveButton = styled.TouchableOpacity`
   align-items: center;
 `;
 
+const SettingRow = styled.View`
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom-width: 1px;
+  border-bottom-color: ${props => props.theme.colors.border};
+`;
+
+const SettingLabel = styled.Text`
+  font-size: 16px;
+  color: ${props => props.theme.colors.text};
+  flex: 1;
+`;
+
+const DurationInput = styled.TextInput`
+  background-color: ${props => props.theme.colors.card};
+  padding: 8px 12px;
+  border-radius: 8px;
+  width: 60px;
+  text-align: center;
+  margin-right: 8px;
+  color: ${props => props.theme.colors.text};
+`;
+
+const MinutesText = styled.Text`
+  font-size: 14px;
+  color: ${props => props.theme.colors.textLight};
+  width: 30px;
+`;
+
+import { Picker } from '@react-native-picker/picker';
+
+const PickerContainer = styled.View`
+  flex: 1;
+  border-radius: 8px;
+  background-color: ${props => props.theme.colors.card};
+  overflow: hidden;
+`;
+
 const SaveButtonText = styled.Text`
   color: white;
   font-size: 16px;
@@ -94,8 +136,28 @@ export const SettingsScreen = ({ navigation }) => {
   const [showPicker, setShowPicker] = useState(false);
   const [currentPicker, setCurrentPicker] = useState(null);
 
+  // Transition Timer Settings
+  const [transitionSettings, setTransitionSettings] = useState({
+    durations: {
+      'work-to-break': 300, // 5 minutes
+      'break-to-work': 180, // 3 minutes
+      'morning-start': 600, // 10 minutes
+      'evening-wind-down': 900, // 15 minutes
+    },
+    audio: {
+      enabled: true,
+      volume: 0.7,
+      soundType: 'bells', // bells, nature, ocean
+    },
+    haptics: true,
+    theme: 'calm', // calm, focus, energize
+  });
+
   useEffect(() => {
-    loadSchedule();
+    Promise.all([
+      loadSchedule(),
+      loadTransitionSettings()
+    ]);
   }, []);
 
   const loadSchedule = async () => {
@@ -114,7 +176,18 @@ export const SettingsScreen = ({ navigation }) => {
     }
   };
 
-  const saveSchedule = async () => {
+  const loadTransitionSettings = async () => {
+    try {
+      const settings = await storage.getPreferences();
+      if (settings?.transitionSettings) {
+        setTransitionSettings(settings.transitionSettings);
+      }
+    } catch (error) {
+      console.error('Error loading transition settings:', error);
+    }
+  };
+
+  const saveSettings = async () => {
     try {
       const schedule = {
         wakeTime: new Date(wakeTime).toISOString(),
@@ -123,10 +196,15 @@ export const SettingsScreen = ({ navigation }) => {
         workEndTime: new Date(workEndTime).toISOString(),
         bedTime: new Date(bedTime).toISOString(),
       };
-      await AsyncStorage.setItem('userSchedule', JSON.stringify(schedule));
+
+      await Promise.all([
+        AsyncStorage.setItem('userSchedule', JSON.stringify(schedule)),
+        storage.savePreferences({ transitionSettings })
+      ]);
+
       navigation.goBack();
     } catch (error) {
-      console.error('Error saving schedule:', error);
+      console.error('Error saving settings:', error);
     }
   };
 
@@ -214,8 +292,130 @@ export const SettingsScreen = ({ navigation }) => {
           </TimePickerButton>
         </Section>
 
-        <SaveButton onPress={saveSchedule}>
-          <SaveButtonText>Save Schedule</SaveButtonText>
+        <Section>
+          <SectionTitle>Transition Timer</SectionTitle>
+          
+          {/* Duration Settings */}
+          {Object.entries(transitionSettings.durations).map(([type, duration]) => (
+            <SettingRow key={type}>
+              <SettingLabel>{type.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</SettingLabel>
+              <DurationInput
+                value={String(Math.round(duration / 60))}
+                onChangeText={(text) => {
+                  const minutes = parseInt(text) || 0;
+                  setTransitionSettings(prev => ({
+                    ...prev,
+                    durations: {
+                      ...prev.durations,
+                      [type]: minutes * 60
+                    }
+                  }));
+                }}
+                keyboardType="number-pad"
+              />
+              <MinutesText>min</MinutesText>
+            </SettingRow>
+          ))}
+
+          {/* Audio Settings */}
+          <SettingRow>
+            <SettingLabel>Sound Effects</SettingLabel>
+            <Switch
+              value={transitionSettings.audio.enabled}
+              onValueChange={(value) => {
+                setTransitionSettings(prev => ({
+                  ...prev,
+                  audio: { ...prev.audio, enabled: value }
+                }));
+              }}
+            />
+          </SettingRow>
+
+          {transitionSettings.audio.enabled && (
+            <>
+              <SettingRow>
+                <SettingLabel>Sound Type</SettingLabel>
+                <PickerContainer>
+                  <Picker
+                    selectedValue={transitionSettings.audio.soundType}
+                    onValueChange={(value) => {
+                      setTransitionSettings(prev => ({
+                        ...prev,
+                        audio: { ...prev.audio, soundType: value }
+                      }));
+                    }}
+                    style={{
+                      color: theme.colors.text,
+                      height: 40
+                    }}
+                  >
+                    <Picker.Item value="bells" label="Bells" />
+                    <Picker.Item value="nature" label="Nature" />
+                    <Picker.Item value="ocean" label="Ocean" />
+                  </Picker>
+                </PickerContainer>
+              </SettingRow>
+
+              <SettingRow>
+                <SettingLabel>Volume</SettingLabel>
+                <Slider
+                  style={{ flex: 1 }}
+                  value={transitionSettings.audio.volume}
+                  onValueChange={(value) => {
+                    setTransitionSettings(prev => ({
+                      ...prev,
+                      audio: { ...prev.audio, volume: value }
+                    }));
+                  }}
+                  minimumValue={0}
+                  maximumValue={1}
+                  step={0.1}
+                />
+              </SettingRow>
+            </>
+          )}
+
+          {/* Haptic Feedback */}
+          <SettingRow>
+            <SettingLabel>Haptic Feedback</SettingLabel>
+            <Switch
+              value={transitionSettings.haptics}
+              onValueChange={(value) => {
+                setTransitionSettings(prev => ({
+                  ...prev,
+                  haptics: value
+                }));
+              }}
+            />
+          </SettingRow>
+
+          {/* Theme Selection */}
+          <SettingRow>
+            <SettingLabel>Theme</SettingLabel>
+            <PickerContainer>
+              <Picker
+                selectedValue={transitionSettings.theme}
+                onValueChange={(value) => {
+                  setTransitionSettings(prev => ({
+                    ...prev,
+                    theme: value
+                  }));
+                }}
+                style={{
+                  color: theme.colors.text,
+                  height: 40
+                }}
+              >
+                <Picker.Item value="calm" label="Calm" />
+                <Picker.Item value="focus" label="Focus" />
+                <Picker.Item value="energize" label="Energize" />
+              </Picker>
+            </PickerContainer>
+          </SettingRow>
+        </Section>
+
+        <SaveButton onPress={saveSettings}>
+          <SaveButtonText>Save Settings</SaveButtonText>
         </SaveButton>
       </ScrollView>
 
