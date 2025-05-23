@@ -1,15 +1,38 @@
-import React, { useState } from 'react';
-import { View, ScrollView, Switch } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, ScrollView, Switch, Animated, Easing } from 'react-native';
 import Slider from '@react-native-community/slider';
 import styled from '@emotion/native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useOnboarding } from '../../../context/OnboardingContext';
-import { PrimaryButton, ScreenContainer, ScreenTitle, ScreenDescription, ProgressBar } from '../../../components/shared/OnboardingComponents';
+import { PrimaryButton, TextButton } from '../../../components/shared/OnboardingComponents';
 import { notificationOptions } from '../screen.data';
 import { theme } from '../../../theme/theme';
 
 const NotificationScreen = () => {
-  const { notificationPreferences, updateNotificationPreferences, nextStep } = useOnboarding();
+  const { notificationPreferences, updateNotificationPreferences, nextStep, prevStep } = useOnboarding();
+  
+  // Animation values
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(20)).current;
+
+  // Run animations on mount
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: theme.animation.timing.standard,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: theme.animation.timing.standard,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
   const [blackoutPeriod, setBlackoutPeriod] = useState({
     startTime: '22:00',
     endTime: '07:00',
@@ -80,14 +103,48 @@ const NotificationScreen = () => {
 
   return (
     <ScreenContainer>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <HeaderContainer>
-          <ScreenTitle>Notification Preferences</ScreenTitle>
-          <ScreenDescription>
-            Customize how and when you'd like to receive reminders for your pause moments.
-          </ScreenDescription>
-          <ProgressBar currentStep={4} totalSteps={7} />
-        </HeaderContainer>
+      <BackgroundGradient
+        colors={[theme.colors.secondary + '30', theme.colors.background]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 0.6 }}
+      />
+
+      <HeaderContainer>
+        <NavigationRow>
+          <BackButton onPress={prevStep}>
+            <Ionicons name="chevron-back" size={24} color={theme.colors.primary} />
+          </BackButton>
+          <ProgressContainer>
+            <ProgressDot active={false} />
+            <ProgressDot active={false} />
+            <ProgressDot active={false} />
+            <ProgressDot active={false} />
+            <ProgressDot active={true} />
+            <ProgressDot active={false} />
+            <ProgressDot active={false} />
+          </ProgressContainer>
+          <SkipButton>
+            <TextButton title="Skip" onPress={nextStep} />
+          </SkipButton>
+        </NavigationRow>
+
+        <Animated.View
+          style={{
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }],
+            width: '100%',
+          }}
+        >
+          <TitleContainer>
+            <ScreenTitle>Notification Preferences</ScreenTitle>
+            <ScreenDescription>
+              Customize how and when you'd like to receive reminders for your pause moments.
+            </ScreenDescription>
+          </TitleContainer>
+        </Animated.View>
+      </HeaderContainer>
+
+      <ContentScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
 
         <SectionContainer>
           <SectionTitle>Notification Types</SectionTitle>
@@ -200,30 +257,110 @@ const NotificationScreen = () => {
           </InfoText>
         </InfoContainer>
 
-        <ButtonContainer>
-          <PrimaryButton title="Continue" onPress={nextStep} />
-        </ButtonContainer>
-      </ScrollView>
+      </ContentScrollView>
+
+      <ButtonContainer>
+        <PrimaryButton title="Continue" onPress={nextStep} />
+      </ButtonContainer>
     </ScreenContainer>
   );
 };
 
 // Styled Components
+const ScreenContainer = styled.View`
+  flex: 1;
+  background-color: ${theme.colors.background};
+  position: relative;
+`;
+
+const BackgroundGradient = styled(LinearGradient)`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+`;
+
 const HeaderContainer = styled.View`
+  padding: 50px ${theme.spacing.screenHorizontal}px 20px;
+  width: 100%;
+`;
+
+const NavigationRow = styled.View`
+  flex-direction: row;
+  justify-content: space-between;
   align-items: center;
-  margin-bottom: ${theme.spacing.xl}px;
+  width: 100%;
+  margin-bottom: 24px;
+`;
+
+const BackButton = styled.TouchableOpacity`
+  width: 40px;
+  height: 40px;
+  justify-content: center;
+  align-items: center;
+`;
+
+const SkipButton = styled.View`
+  width: 40px;
+`;
+
+const ProgressContainer = styled.View`
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+`;
+
+const ProgressDot = styled.View`
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  background-color: ${props => props.active ? theme.colors.primary : theme.colors.border};
+  margin: 0 4px;
+  opacity: ${props => props.active ? 1 : 0.5};
+`;
+
+const TitleContainer = styled.View`
+  align-items: center;
+  margin-bottom: 32px;
+`;
+
+const ContentScrollView = styled.ScrollView`
+  flex: 1;
+`;
+
+const ScreenTitle = styled.Text`
+  font-size: 28px;
+  font-weight: 700;
+  color: ${theme.colors.text};
+  text-align: center;
+  margin-bottom: 12px;
+  font-family: ${theme.fonts.heading};
+`;
+
+const ScreenDescription = styled.Text`
+  font-size: 16px;
+  font-weight: 400;
+  color: ${theme.colors.text};
+  opacity: 0.7;
+  text-align: center;
+  line-height: 24px;
+  font-family: ${theme.fonts.body};
 `;
 
 const SectionContainer = styled.View`
-  margin-bottom: ${theme.spacing.xl}px;
+  margin: 0 ${theme.spacing.screenHorizontal}px ${theme.spacing.xl}px;
 `;
 
 const SectionTitle = styled.Text`
   font-size: 18px;
-  font-weight: bold;
+  font-weight: 600;
   color: ${theme.colors.text};
   margin-bottom: ${theme.spacing.md}px;
   font-family: ${theme.fonts.heading};
+  display: flex;
+  flex-direction: row;
+  align-items: center;
 `;
 
 const NotificationOption = styled.View`
@@ -231,7 +368,11 @@ const NotificationOption = styled.View`
   border-radius: ${theme.borderRadius.medium}px;
   padding: ${theme.spacing.md}px;
   margin-bottom: ${theme.spacing.md}px;
-  ${theme.shadows.small}
+  shadow-color: ${theme.colors.text};
+  shadow-offset: 0px 2px;
+  shadow-opacity: 0.05;
+  shadow-radius: 10px;
+  elevation: 2;
 `;
 
 const OptionContent = styled.View`
@@ -240,13 +381,18 @@ const OptionContent = styled.View`
 `;
 
 const IconContainer = styled.View`
-  width: 40px;
-  height: 40px;
-  border-radius: 20px;
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
   background-color: ${theme.colors.secondary}40;
   align-items: center;
   justify-content: center;
   margin-right: ${theme.spacing.md}px;
+  shadow-color: ${theme.colors.primary};
+  shadow-offset: 0px 1px;
+  shadow-opacity: 0.1;
+  shadow-radius: 4px;
+  elevation: 1;
 `;
 
 const TextContainer = styled.View`
@@ -296,7 +442,11 @@ const BlackoutContainer = styled.View`
   background-color: ${theme.colors.white};
   border-radius: ${theme.borderRadius.medium}px;
   padding: ${theme.spacing.md}px;
-  ${theme.shadows.small}
+  shadow-color: ${theme.colors.text};
+  shadow-offset: 0px 2px;
+  shadow-opacity: 0.05;
+  shadow-radius: 10px;
+  elevation: 2;
 `;
 
 const BlackoutRow = styled.View`
@@ -317,10 +467,15 @@ const TimeSelector = styled.View`
 `;
 
 const TimeOption = styled.TouchableOpacity`
-  background-color: ${props => props.selected ? theme.colors.primary : theme.colors.secondary};
+  background-color: ${props => props.selected ? theme.colors.primary : theme.colors.secondary + '40'};
   padding: 8px 16px;
-  border-radius: ${theme.borderRadius.medium}px;
+  border-radius: ${theme.borderRadius.button}px;
   margin: 4px;
+  shadow-color: ${props => props.selected ? theme.colors.primary : 'transparent'};
+  shadow-offset: 0px 2px;
+  shadow-opacity: 0.2;
+  shadow-radius: 4px;
+  elevation: ${props => props.selected ? 2 : 0};
 `;
 
 const TimeOptionText = styled.Text`
@@ -338,10 +493,15 @@ const DayOption = styled.TouchableOpacity`
   width: 36px;
   height: 36px;
   border-radius: 18px;
-  background-color: ${props => props.selected ? theme.colors.primary : theme.colors.secondary};
+  background-color: ${props => props.selected ? theme.colors.primary : theme.colors.secondary + '40'};
   align-items: center;
   justify-content: center;
   margin: 0 2px;
+  shadow-color: ${props => props.selected ? theme.colors.primary : 'transparent'};
+  shadow-offset: 0px 2px;
+  shadow-opacity: 0.2;
+  shadow-radius: 4px;
+  elevation: ${props => props.selected ? 2 : 0};
 `;
 
 const DayText = styled.Text`
@@ -357,7 +517,12 @@ const InfoContainer = styled.View`
   background-color: ${theme.colors.secondary}40;
   border-radius: ${theme.borderRadius.medium}px;
   padding: ${theme.spacing.md}px;
-  margin-bottom: ${theme.spacing.xl}px;
+  margin: 0 ${theme.spacing.screenHorizontal}px ${theme.spacing.xl}px;
+  shadow-color: ${theme.colors.text};
+  shadow-offset: 0px 1px;
+  shadow-opacity: 0.05;
+  shadow-radius: 5px;
+  elevation: 1;
 `;
 
 const InfoIcon = styled.View`
@@ -372,8 +537,14 @@ const InfoText = styled.Text`
 `;
 
 const ButtonContainer = styled.View`
-  padding: ${theme.spacing.lg}px 0;
-  margin-bottom: ${theme.spacing.xl}px;
+  padding: 20px ${theme.spacing.screenHorizontal}px;
+  background-color: ${theme.colors.background};
+  border-top-width: 1px;
+  border-top-color: ${theme.colors.border};
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
 `;
 
 export default NotificationScreen;
