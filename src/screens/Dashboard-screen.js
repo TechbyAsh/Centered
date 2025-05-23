@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from '@emotion/native';
-import { ScrollView, Dimensions, TouchableOpacity, View, Text } from 'react-native';
+import { ScrollView, Dimensions, TouchableOpacity, View, Text, SafeAreaView } from 'react-native';
 import { Ionicons } from "@expo/vector-icons";
 import { useDashboardData } from '../hooks/useDashboardData';
 import { RecommendedActivities } from '../components/RecommendedActivities';
@@ -8,7 +8,6 @@ import { RecommendedActivities } from '../components/RecommendedActivities';
 const Container = styled.View`
   flex: 1;
   background-color: ${props => props.theme.colors.background};
-  padding: 20px;
 `;
 
 const Header = styled.View`
@@ -174,7 +173,8 @@ export const DashboardScreen = ({ navigation }) => {
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   return (
-    <Container>
+    <SafeAreaView style={{ flex: 1, }}>
+      <Container>
       <Header>
         <Title>Dashboard</Title>
         <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
@@ -182,12 +182,9 @@ export const DashboardScreen = ({ navigation }) => {
         </TouchableOpacity>
       </Header>
       
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20 }}>
         <RecommendedActivities navigation={navigation} />
-        <Header>
-          <SectionTitle>Dashboard</SectionTitle>
-          <Ionicons name="settings-outline" size={24} color="#00A896" />
-        </Header>
+        <SectionTitle>Your Progress</SectionTitle>
 
         <StatsContainer>
           <StatCard>
@@ -230,6 +227,7 @@ export const DashboardScreen = ({ navigation }) => {
           ))}
         </RecentSessionsContainer>
       </ScrollView>
-    </Container>
+      </Container>
+    </SafeAreaView>
   );
 };

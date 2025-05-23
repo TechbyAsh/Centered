@@ -5,8 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getRecommendedActivities } from '../services/time-optimization';
 
 const Container = styled.View`
-  margin: 20px;
-  margin-top: 10px;
+  margin-bottom: 30px;
 `;
 
 const Title = styled.Text`

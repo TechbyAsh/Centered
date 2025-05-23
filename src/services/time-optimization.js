@@ -110,15 +110,34 @@ const timeToMinutes = (timeString) => {
   return date.getHours() * 60 + date.getMinutes();
 };
 
-// Get current time block based on user's schedule
+// Get current time block based on user's schedule or time of day
 const getCurrentTimeBlock = async () => {
   try {
     const scheduleStr = await AsyncStorage.getItem('userSchedule');
-    if (!scheduleStr) return null;
-
-    const schedule = JSON.parse(scheduleStr);
     const now = new Date();
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+    // If no schedule, use default time blocks based on time of day
+    if (!scheduleStr) {
+      if (currentMinutes < 6 * 60) { // Before 6 AM
+        return TIME_BLOCKS.NIGHT;
+      } else if (currentMinutes < 9 * 60) { // 6 AM - 9 AM
+        return TIME_BLOCKS.EARLY_MORNING;
+      } else if (currentMinutes < 12 * 60) { // 9 AM - 12 PM
+        return TIME_BLOCKS.MORNING;
+      } else if (currentMinutes < 13 * 60) { // 12 PM - 1 PM
+        return TIME_BLOCKS.LUNCH;
+      } else if (currentMinutes < 17 * 60) { // 1 PM - 5 PM
+        return TIME_BLOCKS.AFTERNOON;
+      } else if (currentMinutes < 21 * 60) { // 5 PM - 9 PM
+        return TIME_BLOCKS.EVENING;
+      } else { // After 9 PM
+        return TIME_BLOCKS.NIGHT;
+      }
+    }
+
+    const schedule = JSON.parse(scheduleStr);
+
 
     const wakeMinutes = timeToMinutes(schedule.wakeTime);
     const workStartMinutes = timeToMinutes(schedule.workStartTime);

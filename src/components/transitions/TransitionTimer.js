@@ -346,7 +346,6 @@ export const TransitionTimer = ({
 
     // Add transition to calendar
     await calendarService.addTransitionToCalendar(type, startTime, duration);
-    setIsActive(false);
     
     if (settings.audio.enabled) {
       await playSound();
@@ -395,6 +394,8 @@ export const TransitionTimer = ({
       lastSessionDate: new Date().toISOString()
     });
 
+    // Update state after all async operations
+    setIsActive(false);
     onComplete?.();
   };
 

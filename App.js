@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { TransitionPresets } from '@react-navigation/stack';
@@ -9,16 +9,23 @@ import { useFonts, PlayfairDisplay_400Regular } from '@expo-google-fonts/playfai
 import { Poppins_400Regular } from '@expo-google-fonts/poppins';
 import * as SplashScreen from 'expo-splash-screen';
 import { View, Text, Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { theme } from './src/infrastructure/theme/theme.index';
+// Theme
+import { theme as appTheme } from './src/infrastructure/theme/theme.index';
+import { theme as pauseTheme } from './src/theme/theme';
+
+// Context
 import { AppProvider } from './src/infrastructure/context/AppContext';
+import { OnboardingProvider } from './src/context/OnboardingContext';
 import { AppNavigator } from './src/infrastructure/navigation/app.navigator';
 
+// Screens
 import { WelcomeScreen } from './src/screens/welcome';
 import { RelaxScreen } from './src/screens/Relax-screen';
 import { SleepScreen } from "./src/screens/Sleep-screen"
 import { BreatheScreen } from './src/screens/Breathe-screen';
-import { OnboardingScreen } from './src/screens/onboarding/onboarding-screen';
+import OnboardingContainer from './src/screens/onboarding/OnboardingContainer';
 
 const HomeStack = createStackNavigator();
 
@@ -36,45 +43,72 @@ export default function App() {
     PlayfairDisplay_400Regular,
     Poppins_400Regular,
   });
+  const [onboardingCompleted, setOnboardingCompleted] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  React.useEffect(() => {
-    if (fontsLoaded) {
-      // Hide splash screen once fonts are loaded
+  // Check if onboarding has been completed
+  useEffect(() => {
+    const checkOnboardingStatus = async () => {
+      try {
+        const onboardingStatus = await AsyncStorage.getItem('@PauseApp:onboarding');
+        if (onboardingStatus) {
+          const { completed } = JSON.parse(onboardingStatus);
+          setOnboardingCompleted(completed);
+        }
+      } catch (error) {
+        console.error('Failed to check onboarding status:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkOnboardingStatus();
+  }, []);
+
+  // Hide splash screen once fonts are loaded and onboarding status is checked
+  useEffect(() => {
+    if (fontsLoaded && !loading) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded]);
+  }, [fontsLoaded, loading]);
 
-  if (!fontsLoaded) {
+  if (!fontsLoaded || loading) {
     return null;
   }
 
+  // Combine the themes
+  const combinedTheme = { ...appTheme, ...pauseTheme };
+
   return (
     <AppProvider>
-      <ThemeProvider theme={theme}>
-        <StatusBar style="dark" />
-        <NavigationContainer>
-          <HomeStack.Navigator  
-            screenOptions={{
-              headerShown: false,
-              ...TransitionPresets.ModalSlideFromBottomIOS, 
-              gestureEnabled: true,
-            }}
-          >
-            <HomeStack.Screen name="Onboarding" component={OnboardingScreen}/>
-            <HomeStack.Screen name="Welcome" component={WelcomeScreen}/>
-            <HomeStack.Screen 
-              name="App" 
-              component={AppNavigator}
-              options={{
-                ...TransitionPresets.SlideFromRightIOS,
+      <OnboardingProvider>
+        <ThemeProvider theme={combinedTheme}>
+          <StatusBar style="dark" />
+          <NavigationContainer>
+            <HomeStack.Navigator  
+              initialRouteName={onboardingCompleted ? "Welcome" : "Onboarding"}
+              screenOptions={{
+                headerShown: false,
+                ...TransitionPresets.ModalSlideFromBottomIOS, 
+                gestureEnabled: true,
               }}
-            />
-            <HomeStack.Screen name="Breathe" component={BreatheScreen}/>
-            <HomeStack.Screen name="Relax" component={RelaxScreen}/>
-            <HomeStack.Screen name="Sleep" component={SleepScreen}/>
-          </HomeStack.Navigator>
-        </NavigationContainer>
-      </ThemeProvider>
+            >
+              <HomeStack.Screen name="Onboarding" component={OnboardingContainer}/>
+              <HomeStack.Screen name="Welcome" component={WelcomeScreen}/>
+              <HomeStack.Screen 
+                name="App" 
+                component={AppNavigator}
+                options={{
+                  ...TransitionPresets.SlideFromRightIOS,
+                }}
+              />
+              <HomeStack.Screen name="Breathe" component={BreatheScreen}/>
+              <HomeStack.Screen name="Relax" component={RelaxScreen}/>
+              <HomeStack.Screen name="Sleep" component={SleepScreen}/>
+            </HomeStack.Navigator>
+          </NavigationContainer>
+        </ThemeProvider>
+      </OnboardingProvider>
     </AppProvider>
   );
 }
