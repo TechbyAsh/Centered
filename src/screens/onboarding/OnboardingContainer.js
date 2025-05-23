@@ -38,9 +38,15 @@ const OnboardingContainer = ({ navigation }) => {
   }, [currentStep, currentScreenIndex, fadeAnim]);
 
   // Handle completion of onboarding
-  const handleComplete = () => {
+  const handleComplete = (destination = 'home') => {
+    // Mark onboarding as complete in context
     completeOnboarding();
-    navigation.replace('Welcome');
+    
+    // Navigate to authentication flow
+    navigation.replace('Auth', { 
+      onboardingComplete: true,
+      destination: destination 
+    });
   };
 
   // Render the current onboarding step

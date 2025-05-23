@@ -52,13 +52,13 @@ const CompletionScreen = ({ onComplete }) => {
   // Handle trying the first pause moment
   const handleTryFirstPause = () => {
     // In a real app, this would navigate to a pause moment experience
-    // For now, we'll just complete the onboarding
-    onComplete();
+    // For now, we'll navigate to the authentication flow
+    onComplete('tryPause');
   };
 
   // Handle skipping to the home screen
   const handleSkipToHome = () => {
-    onComplete();
+    onComplete('home');
   };
 
   return (

@@ -18,6 +18,7 @@ import { theme as pauseTheme } from './src/theme/theme';
 // Context
 import { AppProvider } from './src/infrastructure/context/AppContext';
 import { OnboardingProvider } from './src/context/OnboardingContext';
+import { AuthProvider } from './src/context/AuthContext';
 import { AppNavigator } from './src/infrastructure/navigation/app.navigator';
 
 // Screens
@@ -26,6 +27,7 @@ import { RelaxScreen } from './src/screens/Relax-screen';
 import { SleepScreen } from "./src/screens/Sleep-screen"
 import { BreatheScreen } from './src/screens/Breathe-screen';
 import OnboardingContainer from './src/screens/onboarding/OnboardingContainer';
+import AuthContainer from './src/screens/auth/AuthContainer';
 
 const HomeStack = createStackNavigator();
 
@@ -44,32 +46,40 @@ export default function App() {
     Poppins_400Regular,
   });
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Check if onboarding has been completed
+  // Check if onboarding has been completed and if user is authenticated
   useEffect(() => {
-    const checkOnboardingStatus = async () => {
+    const checkAppStatus = async () => {
       try {
-        // TEMPORARY: Reset onboarding status for testing
-        await AsyncStorage.removeItem('@PauseApp:onboarding');
-        setOnboardingCompleted(false);
-        
-        // Original code (commented out during testing)
-        /*
+        // Check onboarding status
         const onboardingStatus = await AsyncStorage.getItem('@PauseApp:onboarding');
         if (onboardingStatus) {
           const { completed } = JSON.parse(onboardingStatus);
           setOnboardingCompleted(completed);
         }
+        
+        // Check authentication status
+        const authToken = await AsyncStorage.getItem('@PauseApp:authToken');
+        setIsAuthenticated(!!authToken);
+        
+        // TEMPORARY: For testing, uncomment these lines to reset app state
+        /*
+        await AsyncStorage.removeItem('@PauseApp:onboarding');
+        await AsyncStorage.removeItem('@PauseApp:authToken');
+        await AsyncStorage.removeItem('@PauseApp:userData');
+        setOnboardingCompleted(false);
+        setIsAuthenticated(false);
         */
       } catch (error) {
-        console.error('Failed to check onboarding status:', error);
+        console.error('Failed to check app status:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    checkOnboardingStatus();
+    checkAppStatus();
   }, []);
 
   // Hide splash screen once fonts are loaded and onboarding status is checked
@@ -86,35 +96,49 @@ export default function App() {
   // Combine the themes
   const combinedTheme = { ...appTheme, ...pauseTheme };
 
+  // Determine initial route based on onboarding and authentication status
+  const getInitialRouteName = () => {
+    if (!onboardingCompleted) {
+      return 'Onboarding';
+    } else if (!isAuthenticated) {
+      return 'Auth';
+    } else {
+      return 'Welcome';
+    }
+  };
+
   return (
     <AppProvider>
       <OnboardingProvider>
-        <ThemeProvider theme={combinedTheme}>
-          <StatusBar style="dark" />
-          <NavigationContainer>
-            <HomeStack.Navigator  
-              initialRouteName={onboardingCompleted ? "Welcome" : "Onboarding"}
-              screenOptions={{
-                headerShown: false,
-                ...TransitionPresets.ModalSlideFromBottomIOS, 
-                gestureEnabled: true,
-              }}
-            >
-              <HomeStack.Screen name="Onboarding" component={OnboardingContainer}/>
-              <HomeStack.Screen name="Welcome" component={WelcomeScreen}/>
-              <HomeStack.Screen 
-                name="App" 
-                component={AppNavigator}
-                options={{
-                  ...TransitionPresets.SlideFromRightIOS,
+        <AuthProvider>
+          <ThemeProvider theme={combinedTheme}>
+            <StatusBar style="dark" />
+            <NavigationContainer>
+              <HomeStack.Navigator  
+                initialRouteName={getInitialRouteName()}
+                screenOptions={{
+                  headerShown: false,
+                  ...TransitionPresets.ModalSlideFromBottomIOS, 
+                  gestureEnabled: true,
                 }}
-              />
-              <HomeStack.Screen name="Breathe" component={BreatheScreen}/>
-              <HomeStack.Screen name="Relax" component={RelaxScreen}/>
-              <HomeStack.Screen name="Sleep" component={SleepScreen}/>
-            </HomeStack.Navigator>
-          </NavigationContainer>
-        </ThemeProvider>
+              >
+                <HomeStack.Screen name="Onboarding" component={OnboardingContainer}/>
+                <HomeStack.Screen name="Auth" component={AuthContainer}/>
+                <HomeStack.Screen name="Welcome" component={WelcomeScreen}/>
+                <HomeStack.Screen 
+                  name="App" 
+                  component={AppNavigator}
+                  options={{
+                    ...TransitionPresets.SlideFromRightIOS,
+                  }}
+                />
+                <HomeStack.Screen name="Breathe" component={BreatheScreen}/>
+                <HomeStack.Screen name="Relax" component={RelaxScreen}/>
+                <HomeStack.Screen name="Sleep" component={SleepScreen}/>
+              </HomeStack.Navigator>
+            </NavigationContainer>
+          </ThemeProvider>
+        </AuthProvider>
       </OnboardingProvider>
     </AppProvider>
   );
