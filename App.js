@@ -50,11 +50,18 @@ export default function App() {
   useEffect(() => {
     const checkOnboardingStatus = async () => {
       try {
+        // TEMPORARY: Reset onboarding status for testing
+        await AsyncStorage.removeItem('@PauseApp:onboarding');
+        setOnboardingCompleted(false);
+        
+        // Original code (commented out during testing)
+        /*
         const onboardingStatus = await AsyncStorage.getItem('@PauseApp:onboarding');
         if (onboardingStatus) {
           const { completed } = JSON.parse(onboardingStatus);
           setOnboardingCompleted(completed);
         }
+        */
       } catch (error) {
         console.error('Failed to check onboarding status:', error);
       } finally {
