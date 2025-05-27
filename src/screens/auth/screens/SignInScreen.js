@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Animated, Keyboard } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Animated, Keyboard, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import styled from '@emotion/native';
@@ -11,20 +11,54 @@ const SignInScreen = ({ onSignUpPress, onForgotPasswordPress, onAuthSuccess, onb
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [validationError, setValidationError] = useState(null);
   
-  const { signIn, isLoading, error } = useAuth();
+  const { signIn } = useAuth();
+
+  // Validate form
+  const validateForm = () => {
+    if (!email || !password) {
+      setValidationError('Please enter both email and password');
+      return false;
+    }
+    
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(email)) {
+      setValidationError('Invalid email address');
+      return false;
+    }
+    
+    if (password.length < 8) {
+      setValidationError('Password must be at least 8 characters long');
+      return false;
+    }
+    
+    setValidationError(null);
+    return true;
+  };
 
   // Handle sign in
   const handleSignIn = async () => {
     Keyboard.dismiss();
     
-    if (!email || !password) {
+    if (!validateForm()) {
       return;
     }
     
-    const success = await signIn(email, password);
-    if (success) {
-      onAuthSuccess();
+    setIsLoading(true);
+    try {
+      const success = await signIn(email, password);
+      if (success) {
+        onAuthSuccess();
+      } else {
+        setValidationError('Invalid email or password. Please try again.');
+      }
+    } catch (err) {
+      console.error('Sign in error:', err);
+      setValidationError(err.message || 'An error occurred during sign in');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -102,10 +136,10 @@ const SignInScreen = ({ onSignUpPress, onForgotPasswordPress, onAuthSuccess, onb
               </TouchableOpacity>
             </ForgotPasswordContainer>
             
-            {error && (
+            {validationError && (
               <ErrorContainer>
                 <Ionicons name="alert-circle-outline" size={18} color={theme.colors.error} />
-                <ErrorText>{error}</ErrorText>
+                <ErrorText>{validationError}</ErrorText>
               </ErrorContainer>
             )}
             

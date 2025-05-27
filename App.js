@@ -65,13 +65,13 @@ export default function App() {
         setIsAuthenticated(!!authToken);
         
         // TEMPORARY: For testing, uncomment these lines to reset app state
-        /*
+        
         await AsyncStorage.removeItem('@PauseApp:onboarding');
         await AsyncStorage.removeItem('@PauseApp:authToken');
         await AsyncStorage.removeItem('@PauseApp:userData');
         setOnboardingCompleted(false);
         setIsAuthenticated(false);
-        */
+        
       } catch (error) {
         console.error('Failed to check app status:', error);
       } finally {

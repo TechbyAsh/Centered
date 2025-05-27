@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Animated, Keyboard } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Animated, Keyboard, Alert, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import styled from '@emotion/native';
@@ -14,8 +14,9 @@ const SignUpScreen = ({ onSignInPress, onAuthSuccess, onboardingComplete }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [validationError, setValidationError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   
-  const { signUp, isLoading, error } = useAuth();
+  const { signUp } = useAuth();
 
   // Validate form
   const validateForm = () => {
@@ -52,17 +53,33 @@ const SignUpScreen = ({ onSignInPress, onAuthSuccess, onboardingComplete }) => {
 
   // Handle sign up
   const handleSignUp = async () => {
-    Keyboard.dismiss();
-    
-    // Validate form
+    // Validate form first
     if (!validateForm()) {
       return;
     }
     
-    // Attempt sign up
-    const success = await signUp(email, password, name);
-    if (success) {
-      onAuthSuccess();
+    setIsLoading(true);
+    try {
+      // Use the signUp function from auth context with correct parameters
+      const result = await signUp(email, password, name);
+      
+      if (result.emailConfirmationRequired) {
+        Alert.alert(
+          "Email Verification Required",
+          "Please check your email to verify your account before signing in.",
+          [{ text: "OK", onPress: onSignInPress }]
+        );
+      } else if (result.success) {
+        // If successful, call onAuthSuccess to navigate to the next screen
+        onAuthSuccess();
+      } else if (result.error) {
+        setValidationError(result.error);
+      }
+    } catch (err) {
+      console.error('Sign up error:', err);
+      setValidationError(err.message || 'An error occurred during sign up');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -168,16 +185,16 @@ const SignUpScreen = ({ onSignInPress, onAuthSuccess, onboardingComplete }) => {
               </PasswordInputContainer>
             </InputContainer>
             
-            {(validationError || error) && (
+            {(validationError) && (
               <ErrorContainer>
                 <Ionicons name="alert-circle-outline" size={18} color={theme.colors.error} />
-                <ErrorText>{validationError || error}</ErrorText>
+                <ErrorText>{validationError}</ErrorText>
               </ErrorContainer>
             )}
             
             <SignUpButton onPress={handleSignUp} disabled={isLoading}>
               {isLoading ? (
-                <LoadingIndicator color={theme.colors.white} size="small" />
+                <ActivityIndicator color={theme.colors.white} size="small" />
               ) : (
                 <SignUpButtonText>Create Account</SignUpButtonText>
               )}
