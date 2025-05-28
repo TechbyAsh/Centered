@@ -175,12 +175,7 @@ export const DashboardScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={{ flex: 1, }}>
       <Container>
-      <Header>
-        <Title>Dashboard</Title>
-        <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
-          <Ionicons name="settings-outline" size={24} color="#00A896" />
-        </TouchableOpacity>
-      </Header>
+      {/* Header is now handled by CustomHeader in DashboardDrawerNavigator */}
       
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20 }}>
         <RecommendedActivities navigation={navigation} />

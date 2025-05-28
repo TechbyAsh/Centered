@@ -1,4 +1,14 @@
+import 'react-native-gesture-handler';
+import './polyfills';
 import React, { useEffect, useState } from 'react';
+import { LogBox } from 'react-native';
+
+// Ignore specific warnings
+LogBox.ignoreLogs([
+  'Reanimated 2',
+  '[react-native-gesture-handler]',
+  'Non-serializable values were found in the navigation state',
+]);
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { TransitionPresets } from '@react-navigation/stack';
@@ -65,12 +75,13 @@ export default function App() {
         setIsAuthenticated(!!authToken);
         
         // TEMPORARY: For testing, uncomment these lines to reset app state
-        
+        /*
         await AsyncStorage.removeItem('@PauseApp:onboarding');
         await AsyncStorage.removeItem('@PauseApp:authToken');
         await AsyncStorage.removeItem('@PauseApp:userData');
         setOnboardingCompleted(false);
         setIsAuthenticated(false);
+        */
         
       } catch (error) {
         console.error('Failed to check app status:', error);

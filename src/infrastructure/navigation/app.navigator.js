@@ -2,7 +2,6 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
-import { DashboardScreen } from '../../screens/Dashboard-screen';
 import { BreatheScreen } from '../../screens/Breathe-screen';
 import { RelaxScreen } from '../../screens/Relax-screen';
 import { MeditationScreen } from '../../screens/Meditation-screen';
@@ -10,6 +9,7 @@ import { RitualsScreen } from '../../screens/Rituals-screen';
 import { RitualSessionScreen } from '../../screens/RitualSession-screen';
 import { SettingsScreen } from '../../screens/Settings-screen';
 import { TransitionsScreen } from '../../screens/transitions/Transitions-screen';
+import { DashboardDrawerNavigator } from '../../navigation/DashboardDrawerNavigator';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -41,8 +41,7 @@ const RitualsStack = () => (
 
 const DashboardStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name="DashboardMain" component={DashboardScreen} />
-    <Stack.Screen name="Settings" component={SettingsScreen} />
+    <Stack.Screen name="DashboardMain" component={DashboardDrawerNavigator} />
   </Stack.Navigator>
 );
 
