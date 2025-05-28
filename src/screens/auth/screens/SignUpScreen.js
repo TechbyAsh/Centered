@@ -53,32 +53,55 @@ const SignUpScreen = ({ onSignInPress, onAuthSuccess, onboardingComplete }) => {
 
   // Handle sign up
   const handleSignUp = async () => {
+    console.log('Starting handleSignUp function');
     // Validate form first
     if (!validateForm()) {
+      console.log('Form validation failed');
       return;
     }
     
+    console.log('Form validation successful');
+    console.log('Starting sign-up process with:', { email, password, name });
     setIsLoading(true);
     try {
-      // Use the signUp function from auth context with correct parameters
+      console.log('Calling signUp function from auth context');
       const result = await signUp(email, password, name);
+      console.log('Sign-up result:', result);
       
       if (result.emailConfirmationRequired) {
+        console.log('Email confirmation required');
+        // Show alert but still proceed to Welcome screen for a better user experience
         Alert.alert(
-          "Email Verification Required",
-          "Please check your email to verify your account before signing in.",
-          [{ text: "OK", onPress: onSignInPress }]
+          "Account Created Successfully",
+          "We've sent a verification email to your inbox. Please verify your email when convenient.",
+          [{ 
+            text: "Continue to App", 
+            onPress: () => {
+              console.log('Proceeding to Welcome screen despite email confirmation');
+              setTimeout(() => {
+                onAuthSuccess();
+              }, 500);
+            }
+          }]
         );
       } else if (result.success) {
-        // If successful, call onAuthSuccess to navigate to the next screen
-        onAuthSuccess();
+        console.log('Sign-up successful, calling onAuthSuccess');
+        // Add a small delay to ensure AsyncStorage operations complete
+        setTimeout(() => {
+          onAuthSuccess();
+        }, 500);
       } else if (result.error) {
+        console.log('Sign-up error:', result.error);
         setValidationError(result.error);
+      } else {
+        console.log('Unknown sign-up result state:', result);
+        setValidationError('An unexpected error occurred. Please try again.');
       }
     } catch (err) {
       console.error('Sign up error:', err);
       setValidationError(err.message || 'An error occurred during sign up');
     } finally {
+      console.log('Finally block executed');
       setIsLoading(false);
     }
   };

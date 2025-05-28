@@ -34,12 +34,17 @@ export const AuthProvider = ({ children }) => {
 
   // Sign up function
   const signUp = async (email, password, name) => {
-    return await authService.signUp(email, password, name);
+    console.log('AuthContext: signUp called with:', { email, name });
+    const result = await authService.signUp(email, password, name);
+    console.log('AuthContext: signUp result:', result);
+    return result;
   };
 
   // Sign in function
   const signIn = async (email, password) => {
+    console.log('AuthContext: signIn called with:', { email });
     const success = await authService.signIn(email, password);
+    console.log('AuthContext: signIn result:', success);
     if (success) {
       const currentUser = await authService.getUser();
       const currentSession = await authService.getSession();
@@ -51,7 +56,9 @@ export const AuthProvider = ({ children }) => {
 
   // Sign out function
   const signOut = async () => {
+    console.log('AuthContext: signOut called');
     const success = await authService.signOut();
+    console.log('AuthContext: signOut result:', success);
     if (success) {
       setUser(null);
       setSession(null);
