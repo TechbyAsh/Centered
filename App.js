@@ -28,7 +28,7 @@ import { theme as pauseTheme } from './src/theme/theme';
 // Context
 import { AppProvider } from './src/infrastructure/context/AppContext';
 import { OnboardingProvider } from './src/context/OnboardingContext';
-import { AuthProvider } from './src/context/AuthContext';
+import { AuthProvider, BYPASS_AUTH } from './src/context/AuthContext';
 import { AppNavigator } from './src/infrastructure/navigation/app.navigator';
 
 // Screens
@@ -56,7 +56,7 @@ export default function App() {
     Poppins_400Regular,
   });
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(BYPASS_AUTH);
   const [loading, setLoading] = useState(true);
 
   // Check if onboarding has been completed and if user is authenticated
@@ -70,9 +70,11 @@ export default function App() {
           setOnboardingCompleted(completed);
         }
         
-        // Check authentication status
-        const authToken = await AsyncStorage.getItem('@PauseApp:authToken');
-        setIsAuthenticated(!!authToken);
+        // Only check authentication if not bypassing
+        if (!BYPASS_AUTH) {
+          const authToken = await AsyncStorage.getItem('@PauseApp:authToken');
+          setIsAuthenticated(!!authToken);
+        }
         
         // TEMPORARY: For testing, uncomment these lines to reset app state
         /*
@@ -111,10 +113,10 @@ export default function App() {
   const getInitialRouteName = () => {
     if (!onboardingCompleted) {
       return 'Onboarding';
-    } else if (!isAuthenticated) {
+    } else if (!BYPASS_AUTH && !isAuthenticated) {
       return 'Auth';
     } else {
-      return 'Welcome';
+      return 'App';
     }
   };
 
