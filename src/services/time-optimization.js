@@ -111,14 +111,17 @@ const timeToMinutes = (timeString) => {
 };
 
 // Get current time block based on user's schedule or time of day
-const getCurrentTimeBlock = async () => {
+export const getCurrentTimeBlock = async () => {
   try {
     const scheduleStr = await AsyncStorage.getItem('userSchedule');
     const now = new Date();
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    console.log('Current time:', now.toLocaleTimeString());
 
     // If no schedule, use default time blocks based on time of day
     if (!scheduleStr) {
+      console.log('No user schedule found, using default time blocks');
+      // Default time blocks based on time of day
       if (currentMinutes < 6 * 60) { // Before 6 AM
         return TIME_BLOCKS.NIGHT;
       } else if (currentMinutes < 9 * 60) { // 6 AM - 9 AM
@@ -136,33 +139,40 @@ const getCurrentTimeBlock = async () => {
       }
     }
 
-    const schedule = JSON.parse(scheduleStr);
+    try {
+      const schedule = JSON.parse(scheduleStr);
+      console.log('User schedule found:', schedule);
 
+      const wakeMinutes = timeToMinutes(schedule.wakeTime);
+      const workStartMinutes = timeToMinutes(schedule.workStartTime);
+      const lunchMinutes = timeToMinutes(schedule.lunchTime);
+      const workEndMinutes = timeToMinutes(schedule.workEndTime);
+      const bedMinutes = timeToMinutes(schedule.bedTime);
 
-    const wakeMinutes = timeToMinutes(schedule.wakeTime);
-    const workStartMinutes = timeToMinutes(schedule.workStartTime);
-    const lunchMinutes = timeToMinutes(schedule.lunchTime);
-    const workEndMinutes = timeToMinutes(schedule.workEndTime);
-    const bedMinutes = timeToMinutes(schedule.bedTime);
-
-    if (currentMinutes < wakeMinutes) {
-      return TIME_BLOCKS.NIGHT;
-    } else if (currentMinutes < workStartMinutes) {
-      return TIME_BLOCKS.EARLY_MORNING;
-    } else if (currentMinutes < lunchMinutes) {
-      return TIME_BLOCKS.MORNING;
-    } else if (currentMinutes < lunchMinutes + 60) { // Assume 1-hour lunch
-      return TIME_BLOCKS.LUNCH;
-    } else if (currentMinutes < workEndMinutes) {
+      if (currentMinutes < wakeMinutes) {
+        return TIME_BLOCKS.NIGHT;
+      } else if (currentMinutes < workStartMinutes) {
+        return TIME_BLOCKS.EARLY_MORNING;
+      } else if (currentMinutes < lunchMinutes) {
+        return TIME_BLOCKS.MORNING;
+      } else if (currentMinutes < lunchMinutes + 60) { // Assume 1-hour lunch
+        return TIME_BLOCKS.LUNCH;
+      } else if (currentMinutes < workEndMinutes) {
+        return TIME_BLOCKS.AFTERNOON;
+      } else if (currentMinutes < bedMinutes) {
+        return TIME_BLOCKS.EVENING;
+      } else {
+        return TIME_BLOCKS.NIGHT;
+      }
+    } catch (parseError) {
+      console.error('Error parsing schedule:', parseError);
+      // Fall back to default time blocks if schedule is invalid
       return TIME_BLOCKS.AFTERNOON;
-    } else if (currentMinutes < bedMinutes) {
-      return TIME_BLOCKS.EVENING;
-    } else {
-      return TIME_BLOCKS.NIGHT;
     }
   } catch (error) {
     console.error('Error getting current time block:', error);
-    return null;
+    // Always return a default time block instead of null
+    return TIME_BLOCKS.AFTERNOON;
   }
 };
 

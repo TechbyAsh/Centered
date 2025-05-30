@@ -1,39 +1,47 @@
 import React, { useState, useEffect } from 'react';
 import styled from '@emotion/native';
-import { TouchableOpacity, Animated } from 'react-native';
+import { TouchableOpacity, Animated, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getRecommendedActivities } from '../services/time-optimization';
+import { theme } from '../theme/theme';
 
 const Container = styled.View`
   margin-bottom: 30px;
+  padding-horizontal: 20px;
 `;
 
 const Title = styled.Text`
-  font-size: 18px;
-  font-weight: 500;
-  color: ${props => props.theme.colors.text};
+  font-size: 24px;
+  font-weight: 600;
+  color: ${theme.colors.text};
   margin-bottom: 15px;
 `;
 
 const Card = styled(Animated.View)`
-  background-color: white;
+  background-color: ${theme.colors.white};
   border-radius: 15px;
-  padding: 15px;
+  padding: 20px;
   margin-bottom: 15px;
   flex-direction: row;
   align-items: center;
-  elevation: 3;
-  shadow-color: #000;
-  shadow-offset: 0px 2px;
-  shadow-opacity: 0.25;
-  shadow-radius: 3.84px;
+  ${Platform.select({
+    ios: `
+      shadow-color: #000;
+      shadow-offset: 0px 2px;
+      shadow-opacity: 0.1;
+      shadow-radius: 4px;
+    `,
+    android: `
+      elevation: 3;
+    `
+  })}
 `;
 
 const IconContainer = styled.View`
   width: 50px;
   height: 50px;
   border-radius: 25px;
-  background-color: ${props => props.color};
+  background-color: ${props => props.color || theme.colors.primary};
   justify-content: center;
   align-items: center;
   margin-right: 15px;
@@ -44,26 +52,27 @@ const ContentContainer = styled.View`
 `;
 
 const ActivityName = styled.Text`
-  font-size: 16px;
-  font-weight: 500;
-  color: ${props => props.theme.colors.text};
+  font-size: 18px;
+  font-weight: 600;
+  color: ${theme.colors.text};
   margin-bottom: 4px;
 `;
 
 const ActivityDescription = styled.Text`
   font-size: 14px;
-  color: ${props => props.theme.colors.textLight};
-  margin-bottom: 4px;
+  color: ${theme.colors.text}80;
+  margin-bottom: 8px;
 `;
 
 const Duration = styled.Text`
   font-size: 12px;
-  color: ${props => props.theme.colors.primary};
+  color: ${theme.colors.primary};
+  font-weight: 500;
 `;
 
 const TimeBlock = styled.Text`
-  font-size: 12px;
-  color: ${props => props.theme.colors.textLight};
+  font-size: 14px;
+  color: ${theme.colors.text}80;
   font-style: italic;
   margin-bottom: 15px;
 `;
@@ -93,7 +102,7 @@ const timeBlockMessages = {
 
 export const RecommendedActivities = ({ navigation }) => {
   const [recommendations, setRecommendations] = useState(null);
-  const fadeAnim = new Animated.Value(0);
+  const [fadeAnim] = useState(new Animated.Value(0));  // Initialize as state
 
   useEffect(() => {
     loadRecommendations();
@@ -104,14 +113,24 @@ export const RecommendedActivities = ({ navigation }) => {
   }, []);
 
   const loadRecommendations = async () => {
-    const newRecommendations = await getRecommendedActivities();
-    if (newRecommendations) {
-      setRecommendations(newRecommendations);
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }).start();
+    try {
+      console.log('Loading recommendations...');
+      const newRecommendations = await getRecommendedActivities();
+      console.log('Received recommendations:', newRecommendations);
+      if (newRecommendations) {
+        setRecommendations(newRecommendations);
+        // Reset and start animation
+        fadeAnim.setValue(0);
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }).start();
+      } else {
+        console.log('No recommendations received');
+      }
+    } catch (error) {
+      console.error('Error loading recommendations:', error);
     }
   };
 
@@ -140,7 +159,7 @@ export const RecommendedActivities = ({ navigation }) => {
       <TimeBlock>{timeBlockMessages[recommendations.timeBlock]}</TimeBlock>
 
       <TouchableOpacity onPress={() => navigateToActivity(recommendations.primary)}>
-        <Card style={{ opacity: fadeAnim }}>
+        <Card as={Animated.View} style={{ opacity: fadeAnim }}>
           <IconContainer color={activityColors[recommendations.primary.type]}>
             <Ionicons
               name={activityIcons[recommendations.primary.type]}
@@ -159,7 +178,7 @@ export const RecommendedActivities = ({ navigation }) => {
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => navigateToActivity(recommendations.secondary)}>
-        <Card style={{ opacity: fadeAnim }}>
+        <Card as={Animated.View} style={{ opacity: fadeAnim }}>
           <IconContainer color={activityColors[recommendations.secondary.type]}>
             <Ionicons
               name={activityIcons[recommendations.secondary.type]}
