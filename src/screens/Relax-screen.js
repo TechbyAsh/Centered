@@ -1,14 +1,27 @@
 import React, { useState, useRef, useEffect } from "react";
 import styled from '@emotion/native';
-import { View, TouchableOpacity, Platform } from "react-native";
+import { View, TouchableOpacity, Platform, Dimensions, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
 import { useDashboardData } from '../hooks/useDashboardData';
+import LottieView from 'lottie-react-native';
 
 const Container = styled.View`
   flex: 1;
   background-color: ${props => props.theme.colors.background};
-  padding: ${Platform.OS === 'ios' ? '50px 20px' : '20px'};
+`;
+
+const ContentContainer = styled.View`
+  flex: 1;
+  padding-horizontal: 20px;
+  padding-top: ${Platform.OS === 'ios' ? '50px' : '20px'};
+`;
+
+const CloseButton = styled.TouchableOpacity`
+  position: absolute;
+  top: ${Platform.OS === 'ios' ? '60px' : '20px'};
+  right: 20px;
+  z-index: 2;
 `;
 
 const Header = styled.View`
@@ -80,6 +93,13 @@ const PlayerControls = styled.View`
   margin-top: 10px;
 `;
 
+const AnimationContainer = styled.View`
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+`;
+
 const relaxSessions = [
   {
     id: 1,
@@ -108,6 +128,7 @@ export const RelaxScreen = ({ navigation, theme }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [selectedSession, setSelectedSession] = useState(null);
   const sound = useRef(null);
+  const animation = useRef(null);
   const { addSession } = useDashboardData();
 
   const handleSessionPress = async (session) => {
@@ -139,6 +160,9 @@ export const RelaxScreen = ({ navigation, theme }) => {
   };
 
   useEffect(() => {
+    if (animation.current) {
+      animation.current.play();
+    }
     return () => {
       if (sound.current) {
         sound.current.unloadAsync();
@@ -148,46 +172,60 @@ export const RelaxScreen = ({ navigation, theme }) => {
 
   return (
     <Container>
-      <Header>
-        <HeaderContent>
-          <View>
-            <Title>Relax</Title>
-            <SubTitle>Take a moment to unwind</SubTitle>
-          </View>
-          <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
-            <Ionicons name="settings-outline" size={24} color="#333" />
-          </TouchableOpacity>
-        </HeaderContent>
-      </Header>
+      <CloseButton onPress={() => navigation.goBack()}>
+        <Ionicons name="close" size={24} color="#333" />
+      </CloseButton>
+      
+      <AnimationContainer>
+        <LottieView
+          ref={animation}
+          source={require('../../assets/assets-1/relax-animation.json')}
+          style={{ width: 300, height: 200 }}
+          autoPlay
+          loop
+        />
+      </AnimationContainer>
+      <ContentContainer>
+        <Header>
+          <HeaderContent>
+            <View>
+              <Title>Relax</Title>
+              <SubTitle>Take a moment to unwind</SubTitle>
+            </View>
+          </HeaderContent>
+        </Header>
 
-      {selectedSession && (
-        <PlayerContainer>
-          <RelaxTitle>{selectedSession.title}</RelaxTitle>
-          <PlayerControls>
-            <TouchableOpacity onPress={togglePlayPause}>
-              <Ionicons
-                name={isPlaying ? 'pause-circle' : 'play-circle'}
-                size={50}
-                color="#00A896"
-              />
-            </TouchableOpacity>
-          </PlayerControls>
-        </PlayerContainer>
-      )}
+        {selectedSession && (
+          <PlayerContainer>
+            <RelaxTitle>{selectedSession.title}</RelaxTitle>
+            <PlayerControls>
+              <TouchableOpacity onPress={togglePlayPause}>
+                <Ionicons
+                  name={isPlaying ? 'pause-circle' : 'play-circle'}
+                  size={50}
+                  color="#00A896"
+                />
+              </TouchableOpacity>
+            </PlayerControls>
+          </PlayerContainer>
+        )}
 
-      {relaxSessions.map((session) => (
-        <RelaxCard
-          key={session.id}
-          onPress={() => handleSessionPress(session)}
-        >
-          <RelaxTitle>{session.title}</RelaxTitle>
-          <RelaxDescription>{session.description}</RelaxDescription>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Ionicons name="time-outline" size={16} color="#00A896" />
-            <RelaxDuration> {session.duration} minutes</RelaxDuration>
-          </View>
-        </RelaxCard>
-      ))}
+        <ScrollView>
+          {relaxSessions.map((session) => (
+            <RelaxCard
+              key={session.id}
+              onPress={() => handleSessionPress(session)}
+            >
+              <RelaxTitle>{session.title}</RelaxTitle>
+              <RelaxDescription>{session.description}</RelaxDescription>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="time-outline" size={16} color="#00A896" />
+                <RelaxDuration> {session.duration} minutes</RelaxDuration>
+              </View>
+            </RelaxCard>
+          ))}
+        </ScrollView>
+      </ContentContainer>
     </Container>
   );
 };

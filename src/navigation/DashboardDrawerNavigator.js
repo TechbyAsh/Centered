@@ -11,9 +11,8 @@ import CustomModalDrawer from './CustomModalDrawer';
 
 const Stack = createStackNavigator();
 
-// Custom header with menu and profile buttons
+// Custom header with menu button only
 const CustomHeader = ({ navigation, title, showMenu = true }) => {
-  const { userData } = useAuth();
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
   
   return (
@@ -37,16 +36,8 @@ const CustomHeader = ({ navigation, title, showMenu = true }) => {
 
         <Text style={styles.headerTitle}>{title}</Text>
 
-        <TouchableOpacity 
-          style={styles.profileButton}
-          onPress={() => navigation.navigate('UserProfile')}
-        >
-          {userData?.avatarUrl ? (
-            <Image source={{ uri: userData.avatarUrl }} style={styles.avatarImage} />
-          ) : (
-            <Ionicons name="person-circle" size={30} color={theme.colors.primary} />
-          )}
-        </TouchableOpacity>
+        {/* Empty view for spacing */}
+        <View style={styles.menuButton} />
 
         <CustomModalDrawer 
           isVisible={isDrawerVisible}
@@ -122,25 +113,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
   },
   menuButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: theme.colors.white,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
-  },
-  profileButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
