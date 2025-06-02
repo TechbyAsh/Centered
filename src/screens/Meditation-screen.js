@@ -1,166 +1,176 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from '@emotion/native';
-import { ScrollView, Dimensions, TouchableOpacity, Animated, View, Platform, Modal } from 'react-native';
+import { ScrollView, Dimensions, TouchableOpacity, Animated, View, Platform, Modal, StatusBar, SafeAreaView } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { useTheme } from '@emotion/react';
+import LottieView from 'lottie-react-native';
 
 const { width, height } = Dimensions.get('window');
 
 const Container = styled.View`
   flex: 1;
   background-color: ${props => props.theme.colors.background};
-  padding-top: ${Platform.OS === 'ios' ? 50 : 20}px;
+`;
+
+const StyledSafeAreaView = styled(SafeAreaView)`
+  flex: 1;
+  background-color: ${props => props.theme.colors.background};
 `;
 
 const Header = styled.View`
   padding: 20px;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 `;
 
 const HeaderContent = styled.View`
   flex-direction: row;
   align-items: center;
-  margin-bottom: 10px;
+  justify-content: space-between;
+`;
+
+const TitleContainer = styled.View`
+  flex: 1;
 `;
 
 const WelcomeText = styled.Text`
   font-size: 16px;
   color: ${props => props.theme.colors.textLight};
-  margin-bottom: 8px;
+  margin-bottom: 4px;
+  font-family: ${props => props.theme.fonts.body};
 `;
 
 const Title = styled.Text`
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 700;
   color: ${props => props.theme.colors.text};
   font-family: ${props => props.theme.fonts.heading};
   letter-spacing: -0.5px;
 `;
 
-const CardContainer = styled.View`
-  position: relative;
-  height: ${height * 0.65}px;
-  justify-content: flex-end;
-  align-items: center;
+const CategorySection = styled.View`
   margin-top: 20px;
 `;
 
+const SectionTitle = styled.Text`
+  font-size: 20px;
+  font-weight: 600;
+  color: ${props => props.theme.colors.text};
+  margin: 0 20px 15px;
+  font-family: ${props => props.theme.fonts.heading};
+`;
+
 const CategoryCard = styled(TouchableOpacity)`
-  position: absolute;
   width: ${width - 40}px;
-  height: 130px;
-  border-radius: 28px;
+  height: 160px;
+  border-radius: 24px;
+  margin: 10px 20px;
   overflow: hidden;
+  elevation: 5;
+  shadow-color: #000;
+  shadow-offset: 0px 2px;
+  shadow-opacity: 0.2;
+  shadow-radius: 8px;
+`;
+
+const CardContent = styled.View`
+  flex: 1;
+  padding: 25px;
+  justify-content: space-between;
+`;
+
+const CategoryTitle = styled.Text`
+  font-size: 24px;
+  font-weight: 700;
+  color: white;
+  text-shadow-color: rgba(0, 0, 0, 0.2);
+  text-shadow-offset: 1px 1px;
+  text-shadow-radius: 3px;
+  margin-bottom: 8px;
+  font-family: ${props => props.theme.fonts.heading};
+`;
+
+const CategoryDescription = styled.Text`
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow-color: rgba(0, 0, 0, 0.1);
+  text-shadow-offset: 0px 1px;
+  text-shadow-radius: 2px;
+  font-family: ${props => props.theme.fonts.body};
+`;
+
+const MeditationModal = styled(Modal)`
+  margin: 0;
+  justify-content: flex-end;
+`;
+
+const ModalContent = styled(Animated.View)`
   background-color: ${props => props.theme.colors.background};
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  padding: 20px;
+  padding-bottom: ${Platform.OS === 'ios' ? 40 : 20}px;
+  elevation: 20;
+  shadow-color: #000;
+  shadow-offset: 0px -2px;
+  shadow-opacity: 0.25;
+  shadow-radius: 10px;
+`;
+
+const ModalHeader = styled.View`
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+`;
+
+const ModalTitle = styled.Text`
+  font-size: 24px;
+  font-weight: 700;
+  color: ${props => props.theme.colors.text};
+  font-family: ${props => props.theme.fonts.heading};
+`;
+
+const MeditationItem = styled(TouchableOpacity)`
+  background-color: ${props => props.theme.colors.cardBackground};
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 15px;
+  flex-direction: row;
+  align-items: center;
+  elevation: 2;
+  shadow-color: #000;
+  shadow-offset: 0px 2px;
+  shadow-opacity: 0.1;
+  shadow-radius: 3px;
+`;
+
+const MeditationInfo = styled.View`
+  flex: 1;
+  margin-right: 15px;
 `;
 
 const MeditationTitle = styled.Text`
   font-size: 18px;
-  font-weight: 500;
+  font-weight: 600;
   color: ${props => props.theme.colors.text};
-  margin-bottom: 8px;
+  margin-bottom: 4px;
+  font-family: ${props => props.theme.fonts.heading};
 `;
 
 const MeditationDescription = styled.Text`
   font-size: 14px;
   color: ${props => props.theme.colors.textLight};
-  margin-bottom: 12px;
+  margin-bottom: 8px;
+  font-family: ${props => props.theme.fonts.body};
 `;
 
 const MeditationDuration = styled.Text`
   font-size: 14px;
   color: ${props => props.theme.colors.primary};
-`;
-
-const PlayerContainer = styled.View`
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background-color: white;
-  padding: 20px;
-  border-top-left-radius: 20px;
-  border-top-right-radius: 20px;
-  elevation: 5;
-  shadow-color: #000;
-  shadow-offset: 0px -2px;
-  shadow-opacity: 0.25;
-  shadow-radius: 3.84px;
-`;
-
-const ProgressBar = styled.View`
-  height: 4px;
-  background-color: #eee;
-  border-radius: 2px;
-  margin: 10px 0;
-`;
-
-const Progress = styled(Animated.View)`
-  height: 100%;
-  background-color: ${props => props.theme.colors.primary};
-  border-radius: 2px;
-`;
-
-const MetricsContainer = styled.View`
-  flex-direction: row;
-  justify-content: space-between;
-  padding: 15px 20px;
-  background-color: ${props => props.theme.colors.cardBackground};
-  border-radius: 12px;
-  margin: 10px 20px;
-`;
-
-const MetricItem = styled.View`
-  align-items: center;
-`;
-
-const MetricLabel = styled.Text`
-  font-size: 12px;
-  color: ${props => props.theme.colors.textSecondary};
-  margin-bottom: 4px;
-`;
-
-const MetricValue = styled.Text`
-  font-size: 16px;
-  font-weight: 500;
-  color: ${props => props.theme.colors.textPrimary};
-`;
-
-const MeditationCard = styled(TouchableOpacity)`
-  background-color: ${props => props.theme.colors.cardBackground};
-  border-radius: 16px;
-  padding: 20px;
-  margin: 10px 20px;
-  elevation: 2;
-  shadow-color: #000;
-  shadow-offset: 0px 2px;
-  shadow-opacity: 0.1;
-  shadow-radius: 3.84px;
-`;
-
-const PlayerControls = styled.View`
-  flex-direction: row;
-  justify-content: space-around;
-  align-items: center;
-  margin-top: 10px;
-`;
-
-const BottomBar = styled.View`
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 80px;
-  background-color: ${props => props.theme.colors.background};
-  flex-direction: row;
-  justify-content: space-around;
-  align-items: center;
-  border-top-width: 1px;
-  border-top-color: ${props => props.theme.colors.border};
-  padding-bottom: 20px;
+  font-family: ${props => props.theme.fonts.body};
 `;
 
 const categories = [
@@ -243,14 +253,8 @@ const meditations = [
 export const MeditationScreen = ({ navigation }) => {
   const theme = useTheme();
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [selectedMeditation, setSelectedMeditation] = useState(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
   const modalAnimation = useRef(new Animated.Value(0)).current;
-  const sound = useRef(null);
-  const progressAnim = useRef(new Animated.Value(0)).current;
-  const { addSession } = useDashboardData();
 
   const handleCategoryPress = (category) => {
     setSelectedCategory(category);
@@ -281,282 +285,111 @@ export const MeditationScreen = ({ navigation }) => {
     handleModalClose();
   };
 
-  useEffect(() => {
-    return () => {
-      if (sound.current) {
-        sound.current.unloadAsync();
-      }
-    };
-  }, []);
-
-  const startMeditation = async (meditation) => {
-    try {
-      if (sound.current) {
-        await sound.current.unloadAsync();
-      }
-
-      setSelectedMeditation(meditation);
-      const { sound: newSound } = await Audio.Sound.createAsync(meditation.audioFile);
-      sound.current = newSound;
-
-      sound.current.setOnPlaybackStatusUpdate((status) => {
-        if (status.isLoaded) {
-          setProgress(status.positionMillis / status.durationMillis);
-          Animated.timing(progressAnim, {
-            toValue: status.positionMillis / status.durationMillis,
-            duration: 100,
-            useNativeDriver: false,
-          }).start();
-
-          if (status.didJustFinish) {
-            setIsPlaying(false);
-            setProgress(0);
-            progressAnim.setValue(0);
-            addSession({
-              type: 'Meditation',
-              duration: meditation.duration,
-              name: meditation.title
-            });
-          }
-        }
-      });
-
-      await sound.current.playAsync();
-      setIsPlaying(true);
-    } catch (error) {
-      console.error('Error playing meditation:', error);
-    }
-  };
-
-  const togglePlayPause = async () => {
-    if (sound.current) {
-      if (isPlaying) {
-        await sound.current.pauseAsync();
-      } else {
-        await sound.current.playAsync();
-      }
-      setIsPlaying(!isPlaying);
-    }
-  };
-
-  const stopMeditation = async () => {
-    if (sound.current) {
-      await sound.current.stopAsync();
-      await sound.current.unloadAsync();
-      setSelectedMeditation(null);
-      setIsPlaying(false);
-      setProgress(0);
-      progressAnim.setValue(0);
-    }
-  };
-
   return (
     <Container>
-      <Header>
-        <WelcomeText>Welcome back</WelcomeText>
-        <HeaderContent>
-          <View style={{ flex: 1 }}>
-            <Title>Find Your Peace</Title>
-          </View>
-          <TouchableOpacity
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 20,
-              backgroundColor: theme.colors.card,
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
-          >
-            <Ionicons name="settings-outline" size={22} color={theme.colors.text} />
-          </TouchableOpacity>
-        </HeaderContent>
-      </Header>
+      <StatusBar barStyle="dark-content" />
+      <StyledSafeAreaView>
+        <Header>
+          <HeaderContent>
+            <TitleContainer>
+              <WelcomeText>Welcome back</WelcomeText>
+              <Title>Find Your Peace</Title>
+            </TitleContainer>
+            <TouchableOpacity
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 22,
+                backgroundColor: theme.colors.cardBackground,
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+            >
+              <Ionicons name="settings-outline" size={24} color={theme.colors.text} />
+            </TouchableOpacity>
+          </HeaderContent>
+        </Header>
 
-      <ScrollView 
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ 
-          flexGrow: 1,
-          justifyContent: 'center',
-          paddingBottom: 100
-        }}
-      >
-        <CardContainer>
-          {categories.map((category, index) => {
-            const reversedIndex = categories.length - 1 - index;
-            const bottomPosition = reversedIndex * 70;
-            const scale = 1 - (reversedIndex * 0.03);
-            const opacity = 1 - (reversedIndex * 0.1);
-            
-            return (
-              <CategoryCard 
-                key={category.id} 
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingBottom: 30
+          }}
+        >
+          <CategorySection>
+            <SectionTitle>Featured Meditations</SectionTitle>
+            {categories.map((category, index) => (
+              <CategoryCard
+                key={category.id}
                 onPress={() => handleCategoryPress(category)}
                 style={{
-                  transform: [{ translateY: -bottomPosition }, { scale }],
-                  opacity,
-                  zIndex: index,
-                  shadowColor: '#000',
-                  shadowOffset: {
-                    width: 0,
-                    height: 10 - (reversedIndex * 2),
-                  },
-                  shadowOpacity: 0.3 - (reversedIndex * 0.05),
-                  shadowRadius: 15,
-                  elevation: 10 - (reversedIndex * 2),
+                  transform: [{ scale: 1 }],
                 }}
               >
                 <LinearGradient
                   colors={category.gradient}
                   start={{ x: 0.1, y: 0.1 }}
                   end={{ x: 0.9, y: 0.9 }}
-                  style={{
-                    flex: 1,
-                    padding: 25,
-                    justifyContent: 'space-between',
-                  }}
+                  style={{ flex: 1 }}
                 >
-                  <View>
-                    <MeditationTitle 
-                      style={{ 
-                        color: 'white',
-                        fontSize: 24,
-                        fontWeight: '700',
-                        textShadowColor: 'rgba(0, 0, 0, 0.2)',
-                        textShadowOffset: { width: 1, height: 1 },
-                        textShadowRadius: 3,
-                        marginBottom: 8
-                      }}
-                    >
-                      {category.title}
-                    </MeditationTitle>
-                    <MeditationDescription 
-                      style={{ 
-                        color: 'rgba(255, 255, 255, 0.9)',
-                        fontSize: 15,
-                        textShadowColor: 'rgba(0, 0, 0, 0.1)',
-                        textShadowOffset: { width: 0, height: 1 },
-                        textShadowRadius: 2
-                      }}
-                    >
-                      {category.meditations.length} meditations
-                    </MeditationDescription>
-                  </View>
+                  <CardContent>
+                    <CategoryTitle>{category.title}</CategoryTitle>
+                    <CategoryDescription>{category.description}</CategoryDescription>
+                  </CardContent>
                 </LinearGradient>
               </CategoryCard>
-            );
-          })}
-        </CardContainer>
-      </ScrollView>
+            ))}
+          </CategorySection>
+        </ScrollView>
 
-      <Modal
-        visible={modalVisible}
-        transparent={true}
-        animationType="none"
-        onRequestClose={handleModalClose}
-      >
-        <Animated.View
-          style={{
-            flex: 1,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            justifyContent: 'center',
-            alignItems: 'center',
-            opacity: modalAnimation
-          }}
+        <MeditationModal
+          visible={modalVisible}
+          transparent
+          animationType="none"
+          onRequestClose={handleModalClose}
         >
-          <Animated.View
+          <TouchableOpacity
             style={{
-              width: width - 40,
-              backgroundColor: theme.colors.background,
-              borderRadius: 25,
-              padding: 20,
-              transform: [
-                {
-                  scale: modalAnimation.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0.8, 1]
-                  })
-                }
-              ]
+              flex: 1,
+              backgroundColor: 'rgba(0,0,0,0.5)',
             }}
+            activeOpacity={1}
+            onPress={handleModalClose}
           >
-            {selectedCategory && (
-              <>
-                <LinearGradient
-                  colors={selectedCategory.gradient}
-                  style={{
-                    height: 120,
-                    margin: -20,
-                    marginBottom: 20,
-                    borderTopLeftRadius: 25,
-                    borderTopRightRadius: 25,
-                    padding: 20,
-                    justifyContent: 'center'
-                  }}
-                >
-                  <Title style={{ color: 'white', fontSize: 28 }}>{selectedCategory.title}</Title>
-                  <MeditationDescription style={{ color: 'white' }}>
-                    {selectedCategory.description}
-                  </MeditationDescription>
-                </LinearGradient>
-
-                <ScrollView style={{ maxHeight: height * 0.4 }}>
-                  {selectedCategory.meditations?.map(meditation => (
-                    <TouchableOpacity
-                      key={meditation.id}
-                      style={{
-                        padding: 15,
-                        backgroundColor: theme.colors.card,
-                        borderRadius: 15,
-                        marginBottom: 10
-                      }}
-                      onPress={() => handleStartMeditation(meditation)}
-                    >
-                      <MeditationTitle>{meditation.title}</MeditationTitle>
-                      <MeditationDescription>{meditation.description}</MeditationDescription>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 5 }}>
-                        <Ionicons name="time-outline" size={16} color={theme.colors.primary} />
-                        <MeditationDuration> {meditation.duration} minutes</MeditationDuration>
-                      </View>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-
-                <TouchableOpacity
-                  onPress={handleModalClose}
-                  style={{ position: 'absolute', right: 20, top: 20 }}
-                >
-                  <Ionicons name="close" size={24} color="white" />
+            <ModalContent
+              style={{
+                transform: [{
+                  translateY: modalAnimation.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [600, 0]
+                  })
+                }]
+              }}
+            >
+              <ModalHeader>
+                <ModalTitle>{selectedCategory?.title}</ModalTitle>
+                <TouchableOpacity onPress={handleModalClose}>
+                  <Ionicons name="close" size={24} color={theme.colors.text} />
                 </TouchableOpacity>
-              </>
-            )}
-          </Animated.View>
-        </Animated.View>
-      </Modal>
+              </ModalHeader>
 
-      {selectedMeditation && (
-        <PlayerContainer>
-          <MeditationTitle>{selectedMeditation.title}</MeditationTitle>
-          <ProgressBar>
-            <Progress style={{ width: progressAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: ['0%', '100%']
-            })}} />
-          </ProgressBar>
-          <PlayerControls>
-            <TouchableOpacity onPress={togglePlayPause}>
-              <Ionicons
-                name={isPlaying ? 'pause-circle' : 'play-circle'}
-                size={50}
-                color="#00A896"
-              />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={stopMeditation}>
-              <Ionicons name="stop-circle" size={50} color="#00A896" />
-            </TouchableOpacity>
-          </PlayerControls>
-        </PlayerContainer>
-      )}
+              {selectedCategory?.meditations.map((meditation) => (
+                <MeditationItem
+                  key={meditation.id}
+                  onPress={() => handleStartMeditation(meditation)}
+                >
+                  <MeditationInfo>
+                    <MeditationTitle>{meditation.title}</MeditationTitle>
+                    <MeditationDescription>{meditation.description}</MeditationDescription>
+                    <MeditationDuration>{meditation.duration} minutes</MeditationDuration>
+                  </MeditationInfo>
+                  <Ionicons name="play-circle" size={32} color={theme.colors.primary} />
+                </MeditationItem>
+              ))}
+            </ModalContent>
+          </TouchableOpacity>
+        </MeditationModal>
+      </StyledSafeAreaView>
     </Container>
   );
 };
