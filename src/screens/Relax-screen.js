@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import styled from '@emotion/native';
-import { View, TouchableOpacity, Platform, Dimensions, ScrollView } from "react-native";
+import { View, TouchableOpacity, Platform, Dimensions, ScrollView, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
 import { useDashboardData } from '../hooks/useDashboardData';
@@ -113,7 +113,7 @@ const relaxSessions = [
     title: 'Body Scan',
     description: 'Release tension with a guided body scan',
     duration: 10,
-    audioFile: require("../../assets/meditations/BodyScanMeditation.mp4"),
+    audioFile: require("../../assets/sounds/bodyScanner.mp3"),
   },
   {
     id: 3,
@@ -131,13 +131,49 @@ export const RelaxScreen = ({ navigation, theme }) => {
   const animation = useRef(null);
   const { addSession } = useDashboardData();
 
+  useEffect(() => {
+    // Request audio permissions when component mounts
+    const setupAudio = async () => {
+      try {
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: false,
+          playsInSilentModeIOS: true,
+          staysActiveInBackground: true,
+          shouldDuckAndroid: true,
+        });
+      } catch (error) {
+        console.error('Error setting up audio:', error);
+      }
+    };
+    
+    setupAudio();
+    
+    return () => {
+      if (sound.current) {
+        sound.current.unloadAsync();
+      }
+    };
+  }, []);
+
   const handleSessionPress = async (session) => {
     try {
-      setSelectedSession(session);
+      // Unload previous audio if exists
       if (sound.current) {
         await sound.current.unloadAsync();
       }
-      const { sound: newSound } = await Audio.Sound.createAsync(session.audioFile);
+
+      setSelectedSession(session);
+      
+      const { sound: newSound } = await Audio.Sound.createAsync(
+        session.audioFile,
+        { shouldPlay: true, volume: 1.0 },
+        (status) => {
+          if (status.didJustFinish) {
+            setIsPlaying(false);
+          }
+        }
+      );
+
       sound.current = newSound;
       setIsPlaying(true);
       await sound.current.playAsync();
@@ -145,30 +181,32 @@ export const RelaxScreen = ({ navigation, theme }) => {
     } catch (error) {
       console.error('Error playing audio:', error);
       setIsPlaying(false);
-      // You might want to show an error message to the user here
+      Alert.alert(
+        'Playback Error',
+        'Unable to play the meditation audio. Please try again.',
+        [{ text: 'OK' }]
+      );
     }
   };
 
   const togglePlayPause = async () => {
-    if (!sound.current) return;
-    if (isPlaying) {
-      await sound.current.pauseAsync();
-    } else {
-      await sound.current.playAsync();
-    }
-    setIsPlaying(!isPlaying);
-  };
-
-  useEffect(() => {
-    if (animation.current) {
-      animation.current.play();
-    }
-    return () => {
-      if (sound.current) {
-        sound.current.unloadAsync();
+    try {
+      if (!sound.current) return;
+      
+      if (isPlaying) {
+        await sound.current.pauseAsync();
+      } else {
+        const status = await sound.current.getStatusAsync();
+        if (status.isLoaded) {
+          await sound.current.playAsync();
+        }
       }
-    };
-  }, []);
+      setIsPlaying(!isPlaying);
+    } catch (error) {
+      console.error('Error toggling playback:', error);
+      Alert.alert('Playback Error', 'Unable to control audio playback.');
+    }
+  };
 
   return (
     <Container>
