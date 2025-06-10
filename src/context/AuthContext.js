@@ -1,8 +1,8 @@
-import { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 import * as authService from '../services/auth-service';
 
-// Create the auth context
-const AuthContext = createContext();
+// Create the auth context with a default value
+const AuthContext = createContext(null);
 
 // For testing purposes - set to false in production
 export const BYPASS_AUTH = true;
@@ -19,8 +19,8 @@ const MOCK_SESSION = {
   token: 'test-token'
 };
 
-// Auth provider component
-export const AuthProvider = ({ children }) => {
+// Define and export the AuthProvider component directly
+export function AuthProvider({ children }) {
   const [user, setUser] = useState(BYPASS_AUTH ? MOCK_USER : null);
   const [session, setSession] = useState(BYPASS_AUTH ? MOCK_SESSION : null);
   const [loading, setLoading] = useState(!BYPASS_AUTH);
@@ -99,7 +99,7 @@ export const AuthProvider = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
-};
+}
 
 // Custom hook to use auth context
 export const useAuth = () => {

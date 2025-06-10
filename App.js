@@ -29,6 +29,8 @@ import { theme as pauseTheme } from './src/theme/theme';
 import { AppProvider } from './src/infrastructure/context/AppContext';
 import { OnboardingProvider } from './src/context/OnboardingContext';
 import { AuthProvider, BYPASS_AUTH } from './src/context/AuthContext';
+import { CalendarAuthProvider } from './src/components/CalendarAuthProvider';
+import { CalendarManagerProvider } from './src/services/calendar/CalendarManager';
 import { AppNavigator } from './src/infrastructure/navigation/app.navigator';
 
 // Screens
@@ -121,38 +123,33 @@ export default function App() {
   };
 
   return (
-    <AppProvider>
-      <OnboardingProvider>
-        <AuthProvider>
-          <ThemeProvider theme={combinedTheme}>
-            <StatusBar style="dark" />
-            <NavigationContainer>
-              <HomeStack.Navigator  
-                initialRouteName={getInitialRouteName()}
-                screenOptions={{
-                  headerShown: false,
-                  ...TransitionPresets.ModalSlideFromBottomIOS, 
-                  gestureEnabled: true,
-                }}
-              >
-                <HomeStack.Screen name="Onboarding" component={OnboardingContainer}/>
-                <HomeStack.Screen name="Auth" component={AuthContainer}/>
-                <HomeStack.Screen name="Welcome" component={WelcomeScreen}/>
-                <HomeStack.Screen 
-                  name="App" 
-                  component={AppNavigator}
-                  options={{
-                    ...TransitionPresets.SlideFromRightIOS,
-                  }}
-                />
-                <HomeStack.Screen name="Breathe" component={BreatheScreen}/>
-                <HomeStack.Screen name="Relax" component={RelaxScreen}/>
-                <HomeStack.Screen name="Sleep" component={SleepScreen}/>
-              </HomeStack.Navigator>
-            </NavigationContainer>
-          </ThemeProvider>
-        </AuthProvider>
-      </OnboardingProvider>
-    </AppProvider>
+    <NavigationContainer>
+      <ThemeProvider theme={appTheme}>
+        <AppProvider>
+          <OnboardingProvider>
+            <AuthProvider>
+              <CalendarManagerProvider>
+                <CalendarAuthProvider>
+                  <HomeStack.Navigator
+                    screenOptions={{
+                      ...TransitionPresets.SlideFromRightIOS,
+                      headerShown: false
+                    }}
+                    initialRouteName={getInitialRouteName()}
+                  >
+                    <HomeStack.Screen name="Onboarding" component={OnboardingContainer} />
+                    <HomeStack.Screen name="Auth" component={AuthContainer} />
+                    <HomeStack.Screen name="App" component={AppNavigator} />
+                    <HomeStack.Screen name="Breathe" component={BreatheScreen} />
+                    <HomeStack.Screen name="Relax" component={RelaxScreen} />
+                    <HomeStack.Screen name="Sleep" component={SleepScreen} />
+                  </HomeStack.Navigator>
+                </CalendarAuthProvider>
+              </CalendarManagerProvider>
+            </AuthProvider>
+          </OnboardingProvider>
+        </AppProvider>
+      </ThemeProvider>
+    </NavigationContainer>
   );
 }

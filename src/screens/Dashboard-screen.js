@@ -4,6 +4,7 @@ import { ScrollView, Dimensions, TouchableOpacity, View, Text, SafeAreaView } fr
 import { Ionicons } from "@expo/vector-icons";
 import { useDashboardData } from '../hooks/useDashboardData';
 import { RecommendedActivities } from '../components/RecommendedActivities';
+import { CalendarView } from '../components/CalendarView';
 
 const Container = styled.View`
   flex: 1;
@@ -178,6 +179,7 @@ export const DashboardScreen = ({ navigation }) => {
       {/* Header is now handled by CustomHeader in DashboardDrawerNavigator */}
       
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20 }}>
+        <CalendarView />
         <RecommendedActivities navigation={navigation} />
         <SectionTitle>Your Progress</SectionTitle>
 

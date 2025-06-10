@@ -14,17 +14,29 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.techbyash.centered",
+      "infoPlist": {
+        "NSCalendarsUsageDescription": "Allow Centered to access your calendar to provide mindful transitions between your scheduled activities.",
+        "NSRemindersUsageDescription": "Allow Centered to set reminders for your mindful transitions."
+      }
     },
     "android": {
+      "package": "com.techbyash.centered",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "permissions": [
+        "READ_CALENDAR",
+        "WRITE_CALENDAR"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "scheme": "centered",
+    "owner": "techbyash",
     "plugins": [
       "expo-font",
       [
@@ -32,7 +44,8 @@
         {
           "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone."
         }
-      ]
+      ],
+      "expo-calendar"
     ]
   }
 }
